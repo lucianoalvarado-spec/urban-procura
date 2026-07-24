@@ -1,4 +1,5 @@
 import type { Categoria, EstadoProceso, Proceso, Region, Subcategoria } from "@/lib/data/types";
+import { REGIONES } from "@/lib/data/constants";
 
 // Cliente del Portal de Contrataciones Abiertas del OECE (estándar OCDS).
 // API oficial y pública, documentada en https://contratacionesabiertas.oece.gob.pe/api
@@ -102,34 +103,6 @@ interface OceRecordResponse {
   records?: { ocid?: string; compiledRelease?: OceReleaseDetalle }[];
 }
 
-const DEPARTAMENTOS: Region[] = [
-  "Amazonas",
-  "Áncash",
-  "Apurímac",
-  "Arequipa",
-  "Ayacucho",
-  "Cajamarca",
-  "Callao",
-  "Cusco",
-  "Huancavelica",
-  "Huánuco",
-  "Ica",
-  "Junín",
-  "La Libertad",
-  "Lambayeque",
-  "Lima",
-  "Loreto",
-  "Madre de Dios",
-  "Moquegua",
-  "Pasco",
-  "Piura",
-  "Puno",
-  "San Martín",
-  "Tacna",
-  "Tumbes",
-  "Ucayali",
-];
-
 const RANGO_DIACRITICOS = new RegExp("[̀-ͯ]", "g");
 
 function quitarAcentos(texto: string): string {
@@ -139,7 +112,7 @@ function quitarAcentos(texto: string): string {
 function mapDepartamento(raw: string | undefined): Region {
   if (!raw) return "Otro";
   const normalizado = quitarAcentos(raw).trim().toUpperCase();
-  const encontrado = DEPARTAMENTOS.find((d) => quitarAcentos(d).toUpperCase() === normalizado);
+  const encontrado = REGIONES.find((d) => quitarAcentos(d).toUpperCase() === normalizado);
   return encontrado ?? "Otro";
 }
 

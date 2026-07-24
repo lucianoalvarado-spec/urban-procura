@@ -1,4 +1,32 @@
-import type { Categoria, EstadoProceso, Subcategoria, TipoProcedimiento } from "@/lib/data/types";
+import type { Categoria, EstadoProceso, Region, Subcategoria, TipoProcedimiento } from "@/lib/data/types";
+
+export const REGIONES: Region[] = [
+  "Amazonas",
+  "Áncash",
+  "Apurímac",
+  "Arequipa",
+  "Ayacucho",
+  "Cajamarca",
+  "Callao",
+  "Cusco",
+  "Huancavelica",
+  "Huánuco",
+  "Ica",
+  "Junín",
+  "La Libertad",
+  "Lambayeque",
+  "Lima",
+  "Loreto",
+  "Madre de Dios",
+  "Moquegua",
+  "Pasco",
+  "Piura",
+  "Puno",
+  "San Martín",
+  "Tacna",
+  "Tumbes",
+  "Ucayali",
+];
 
 export const CATEGORIAS: Categoria[] = ["Obra", "Bienes", "Servicios", "Consultoría de Obras"];
 

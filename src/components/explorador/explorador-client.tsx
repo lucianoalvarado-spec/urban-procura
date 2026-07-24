@@ -5,7 +5,7 @@ import Link from "next/link";
 import type { Proceso } from "@/lib/data/types";
 import { useProveedor } from "@/lib/state/proveedor-context";
 import { computeMatch } from "@/lib/data/matching";
-import { CATEGORIAS, ESTADOS_PROCESO } from "@/lib/data/constants";
+import { CATEGORIAS, ESTADOS_PROCESO, REGIONES } from "@/lib/data/constants";
 import { formatDiasRestantes, formatMonto } from "@/lib/format";
 import { Card, CardBody } from "@/components/ui/card";
 import { MatchBadge } from "@/components/ui/badge";
@@ -96,10 +96,6 @@ export function ExploradorClient({ procesos }: { procesos: Proceso[] }) {
   const procesosActivos = resultadosBusqueda ?? procesos;
   const entidadesActivas = useMemo(
     () => Array.from(new Set(procesosActivos.map((p) => p.entidad))).sort(),
-    [procesosActivos]
-  );
-  const regionesActivas = useMemo(
-    () => Array.from(new Set(procesosActivos.map((p) => p.region))).sort(),
     [procesosActivos]
   );
 
@@ -217,9 +213,9 @@ export function ExploradorClient({ procesos }: { procesos: Proceso[] }) {
             label="Región"
             value={filtros.region}
             onChange={(v) => updateFiltro("region", v)}
-            options={regionesActivas}
+            options={REGIONES}
           />
-          <Select
+          <EntitySelect
             label="Entidad"
             value={filtros.entidad}
             onChange={(v) => updateFiltro("entidad", v)}
@@ -377,6 +373,74 @@ function Select({
         ))}
       </select>
     </label>
+  );
+}
+
+const LIMITE_SUGERENCIAS_ENTIDAD = 30;
+
+function EntitySelect({
+  label,
+  value,
+  onChange,
+  options,
+}: {
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
+  options: string[];
+}) {
+  const [abierto, setAbierto] = useState(false);
+  const [texto, setTexto] = useState("");
+
+  const sugerencias = useMemo(() => {
+    const q = texto.trim().toLowerCase();
+    const base = q ? options.filter((o) => o.toLowerCase().includes(q)) : options;
+    return base.slice(0, LIMITE_SUGERENCIAS_ENTIDAD);
+  }, [options, texto]);
+
+  const elegir = (opcion: string) => {
+    onChange(opcion);
+    setTexto("");
+    setAbierto(false);
+  };
+
+  return (
+    <div className="relative flex flex-col gap-1 text-xs font-medium text-slate-500">
+      {label}
+      <input
+        type="text"
+        value={abierto ? texto : value}
+        placeholder="Todas — escribe para buscar"
+        onFocus={() => setAbierto(true)}
+        onChange={(e) => setTexto(e.target.value)}
+        onBlur={() => setTimeout(() => setAbierto(false), 150)}
+        className="rounded-lg border border-[var(--border)] px-2.5 py-2 text-sm text-[var(--foreground)] focus:border-[var(--brand-500)] focus:outline-none"
+      />
+      {abierto && (
+        <div className="absolute top-full left-0 z-10 mt-1 max-h-64 w-full min-w-[280px] overflow-y-auto rounded-lg border border-[var(--border)] bg-[var(--surface)] shadow-lg">
+          <button
+            type="button"
+            onMouseDown={() => elegir("")}
+            className="block w-full px-3 py-2 text-left text-sm text-slate-500 hover:bg-[var(--surface-muted)]"
+          >
+            Todas
+          </button>
+          {sugerencias.map((opcion) => (
+            <button
+              key={opcion}
+              type="button"
+              onMouseDown={() => elegir(opcion)}
+              className="block w-full px-3 py-2 text-left text-sm text-[var(--foreground)] hover:bg-[var(--surface-muted)]"
+            >
+              {opcion}
+            </button>
+          ))}
+          {sugerencias.length === 0 && (
+            <p className="px-3 py-2 text-xs text-slate-400">Sin coincidencias</p>
+          )}
+        </div>
+      )}
+    </div>
   );
 }
 
