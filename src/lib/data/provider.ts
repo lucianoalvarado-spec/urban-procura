@@ -1,7 +1,13 @@
 import type { Proceso, Proveedor } from "@/lib/data/types";
 import { procesosMock } from "@/lib/data/mock/procesos";
 import { proveedorMock } from "@/lib/data/mock/proveedor";
-import { buscarProcesosLive, esIdProcesoLive, obtenerProcesoLive } from "@/lib/data/live/oece";
+import {
+  buscarProcesosLive,
+  esIdProcesoLive,
+  obtenerEstadisticasLive,
+  obtenerProcesoLive,
+  type EstadisticasOece,
+} from "@/lib/data/live/oece";
 
 // Capa de datos como adaptador reemplazable (ver docs/prompt-claude-code-urban-procura.md, sección 3).
 //
@@ -97,6 +103,13 @@ export async function getProceso(id: string): Promise<Proceso | undefined> {
 export async function getProveedor(): Promise<Proveedor> {
   // Sin autenticación real todavía: siempre devuelve el único perfil demo.
   return simulateLatency(proveedorMock);
+}
+
+// Sin fallback mock a propósito: son cifras institucionales del portal, no procesos —
+// si la fuente no responde, la landing simplemente no muestra la sección (mejor que
+// inventar un número).
+export async function obtenerEstadisticas(): Promise<EstadisticasOece | null> {
+  return obtenerEstadisticasLive();
 }
 
 export function listEntidades(): string[] {

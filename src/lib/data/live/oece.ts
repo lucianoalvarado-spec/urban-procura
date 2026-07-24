@@ -275,6 +275,12 @@ export interface BusquedaLiveParams {
   query?: string;
   categoria?: Categoria;
   paginateBy?: number;
+  /** Año de convocatoria (param real de /search, confirmado con curl: year=2026 reduce
+   * total_results de ~2.7M a los ~41,924 procesos de ese año). Por defecto, el año actual
+   * — sin esto, un `search` de texto libre (ej. el nombre de una entidad) compite con dos
+   * décadas de historial y Elasticsearch no prioriza por fecha, así que procesos recién
+   * convocados quedan enterrados y nunca aparecen dentro del paginateBy. */
+  anio?: number;
 }
 
 const CATEGORIA_A_OCDS: Record<Categoria, string | undefined> = {
@@ -290,6 +296,7 @@ export async function buscarProcesosLive(params: BusquedaLiveParams = {}): Promi
     url.searchParams.set("page", "1");
     url.searchParams.set("paginateBy", String(params.paginateBy ?? 60));
     url.searchParams.set("format", "json");
+    url.searchParams.set("year", String(params.anio ?? new Date().getFullYear()));
     if (params.query) url.searchParams.set("search", params.query);
     const catOcds = params.categoria ? CATEGORIA_A_OCDS[params.categoria] : undefined;
     if (catOcds) url.searchParams.set("category", catOcds);
@@ -336,6 +343,59 @@ export async function obtenerProcesoLive(ocid: string): Promise<Proceso | null> 
     if (!release) return null;
 
     return releaseADetalleProceso(release);
+  } catch {
+    return null;
+  }
+}
+
+interface OceConteoAnio {
+  year: number;
+  buyers: number;
+  suppliers: number;
+  ocids: number;
+  contracts: number;
+}
+
+interface OceIndexCountData {
+  years?: OceConteoAnio[];
+}
+
+export interface EstadisticasOece {
+  anio: number;
+  procesos: number;
+  entidades: number;
+  proveedores: number;
+  contratos: number;
+}
+
+// Mismo endpoint que alimenta los 4 contadores de la portada del Portal de
+// Contrataciones Abiertas (confirmado viendo sus propias peticiones de red):
+// GET /api/v1/indexCountData — no acepta filtro por año pese al nombre de sus params;
+// siempre devuelve el desglose completo por año en `years[]`, hay que buscar el actual.
+export async function obtenerEstadisticasLive(): Promise<EstadisticasOece | null> {
+  try {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 8000);
+    const res = await fetch(`${BASE_URL}/indexCountData?format=json`, {
+      headers: { Accept: "application/json" },
+      signal: controller.signal,
+      cache: "no-store",
+    });
+    clearTimeout(timeout);
+    if (!res.ok) return null;
+
+    const data = (await res.json()) as OceIndexCountData;
+    const anioActual = new Date().getFullYear();
+    const delAnio = (data.years ?? []).find((y) => y.year === anioActual);
+    if (!delAnio) return null;
+
+    return {
+      anio: delAnio.year,
+      procesos: delAnio.ocids,
+      entidades: delAnio.buyers,
+      proveedores: delAnio.suppliers,
+      contratos: delAnio.contracts,
+    };
   } catch {
     return null;
   }

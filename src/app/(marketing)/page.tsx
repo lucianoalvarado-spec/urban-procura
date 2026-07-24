@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { PLANES } from "@/lib/plan";
+import { obtenerEstadisticas } from "@/lib/data/provider";
 
 const FEATURES = [
   {
@@ -20,7 +21,9 @@ const FEATURES = [
   },
 ];
 
-export default function LandingPage() {
+export default async function LandingPage() {
+  const estadisticas = await obtenerEstadisticas();
+
   return (
     <div>
       <section className="mx-auto max-w-6xl px-4 py-16 text-center md:px-6 md:py-24">
@@ -50,6 +53,38 @@ export default function LandingPage() {
           </Link>
         </div>
       </section>
+
+      {estadisticas && (
+        <section className="mx-auto max-w-6xl px-4 pb-16 md:px-6">
+          <div className="grid grid-cols-2 gap-6 rounded-xl border border-[var(--border)] bg-[var(--surface)] p-8 sm:grid-cols-4">
+            {[
+              { valor: estadisticas.procesos, etiqueta: "Procesos de contratación" },
+              { valor: estadisticas.entidades, etiqueta: "Entidades compradoras" },
+              { valor: estadisticas.proveedores, etiqueta: "Proveedores adjudicados" },
+              { valor: estadisticas.contratos, etiqueta: "Contratos" },
+            ].map((stat) => (
+              <div key={stat.etiqueta} className="text-center">
+                <p className="text-3xl font-bold text-[var(--foreground)] md:text-4xl">
+                  {stat.valor.toLocaleString("es-PE")}
+                </p>
+                <p className="mt-1 text-sm text-slate-600">{stat.etiqueta}</p>
+              </div>
+            ))}
+          </div>
+          <p className="mt-3 text-center text-xs text-slate-400">
+            Datos en vivo del{" "}
+            <a
+              href="https://contratacionesabiertas.oece.gob.pe/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="underline"
+            >
+              Portal de Contrataciones Abiertas del OECE
+            </a>{" "}
+            (SEACE V2 y V3) en el año {estadisticas.anio}.
+          </p>
+        </section>
+      )}
 
       <section className="border-y border-[var(--border)] bg-[var(--surface)] py-16">
         <div className="mx-auto max-w-6xl px-4 md:px-6">
