@@ -78,6 +78,17 @@ interface OceDireccion {
 interface OceTenderDetalle extends OceTenderResumen {
   procuringEntity?: OceEntidad;
   documents?: OceDocumento[];
+  /** Único campo de cronograma "real" que expone este API además de tenderPeriod —
+   * confirmado inspeccionando el JSON completo del detalle: para SEACE V3,
+   * `tenderPeriod.endDate` SIEMPRE es igual a la fecha de convocatoria (no la fecha
+   * límite real de nada), así que usarlo como "fecha límite" es directamente incorrecto.
+   * `enquiryPeriod` (consultas y observaciones) sí es una ventana real y distinta —
+   * no es exactamente "registro de participantes" (que no viene en este API), pero en
+   * la práctica ambas etapas arrancan el mismo día y son el mejor proxy disponible de
+   * "¿sigue vigente este proceso?". No existe `awardPeriod`/`contractPeriod` ni un
+   * array `milestones` en ningún registro probado — confirmado con dos procesos reales
+   * distintos (ocds-dgv273-seacev3-1235660 y -1231543), mismo resultado en ambos. */
+  enquiryPeriod?: OcePeriodo;
 }
 
 interface OceParte {
@@ -229,11 +240,18 @@ function releaseADetalleProceso(release: OceReleaseDetalle): Proceso | null {
     }))
   );
 
+  // `tenderPeriod.endDate` NO se usa como etapa propia: para SEACE V3 siempre coincide
+  // con la fecha de convocatoria (ver nota en OceTenderDetalle), listarla aparte solo
+  // duplicaría "Publicación de la convocatoria" con una etiqueta engañosa.
   const cronograma = [
     tender.datePublished && { etapa: "Publicación de la convocatoria", fecha: tender.datePublished },
-    tender.tenderPeriod?.endDate && {
-      etapa: "Presentación de ofertas",
-      fecha: tender.tenderPeriod.endDate,
+    tender.enquiryPeriod?.startDate && {
+      etapa: "Inicio de consultas y observaciones",
+      fecha: tender.enquiryPeriod.startDate,
+    },
+    tender.enquiryPeriod?.endDate && {
+      etapa: "Fin de consultas y observaciones",
+      fecha: tender.enquiryPeriod.endDate,
     },
     ...(release.awards ?? [])
       .filter((a) => a.date)
@@ -256,7 +274,11 @@ function releaseADetalleProceso(release: OceReleaseDetalle): Proceso | null {
     monedaSimbolo: "S/",
     montoReferencial: tender.value?.amount ?? 0,
     fechaPublicacion: tender.datePublished || release.date || new Date().toISOString(),
+    // Preferimos enquiryPeriod.endDate (real, distinto por proceso) sobre
+    // tenderPeriod.endDate (siempre = fecha de convocatoria en SEACE V3, así que un
+    // proceso recién publicado aparecía "vencido" el mismo día).
     fechaLimitePresentacion:
+      tender.enquiryPeriod?.endDate ||
       tender.tenderPeriod?.endDate ||
       tender.datePublished ||
       release.date ||

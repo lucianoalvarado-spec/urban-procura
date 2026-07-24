@@ -4,7 +4,7 @@ import Link from "next/link";
 import type { Proceso } from "@/lib/data/types";
 import { useProveedor } from "@/lib/state/proveedor-context";
 import { computeMatch } from "@/lib/data/matching";
-import { formatDiasRestantes, formatFecha, formatMonto } from "@/lib/format";
+import { diasRestantes, formatDiasRestantes, formatFecha, formatMonto } from "@/lib/format";
 import { Card, CardBody, CardHeader } from "@/components/ui/card";
 import { MatchBadge } from "@/components/ui/badge";
 import { EstadoCrmSelect } from "@/components/crm/estado-crm-select";
@@ -15,6 +15,14 @@ export function FichaClient({ proceso }: { proceso: Proceso }) {
   const { proveedor } = useProveedor();
   const match = computeMatch(proceso, proveedor);
   const puedeMatchCrm = cumplePlan(proveedor.plan, "profesional");
+  // El OCDS del OECE no expone la fecha real de cierre de "Registro de participantes"
+  // (solo trae la ventana de consultas y observaciones, que abre el mismo día) — por
+  // eso este tag dice "postulación", no "registro": es el mejor proxy real disponible,
+  // no una cifra inventada. Ver comentario en lib/data/live/oece.ts (OceTenderDetalle).
+  const enPlazoDePostulacion =
+    proceso.fuente === "live" &&
+    proceso.estado === "Convocado" &&
+    diasRestantes(proceso.fechaLimitePresentacion) >= 0;
 
   return (
     <div className="mx-auto flex max-w-4xl flex-col gap-6">
@@ -49,11 +57,18 @@ export function FichaClient({ proceso }: { proceso: Proceso }) {
                 {proceso.objeto}
               </h1>
             </div>
-            {puedeMatchCrm ? (
-              <MatchBadge nivel={match.nivel} score={match.score} />
-            ) : (
-              <LockedInline minimo="profesional" />
-            )}
+            <div className="flex shrink-0 flex-col items-end gap-1.5">
+              {puedeMatchCrm ? (
+                <MatchBadge nivel={match.nivel} score={match.score} />
+              ) : (
+                <LockedInline minimo="profesional" />
+              )}
+              {enPlazoDePostulacion && (
+                <span className="rounded-full bg-emerald-50 px-2.5 py-0.5 text-xs font-medium text-emerald-700">
+                  En plazo de postulación
+                </span>
+              )}
+            </div>
           </div>
 
           <div className="flex flex-wrap gap-x-6 gap-y-2 text-sm text-slate-600">
@@ -64,7 +79,7 @@ export function FichaClient({ proceso }: { proceso: Proceso }) {
             <Dato label="Tipo de procedimiento">{proceso.tipoProcedimiento}</Dato>
             <Dato label="Estado">{proceso.estado}</Dato>
             <Dato label="Monto referencial">{formatMonto(proceso.montoReferencial)}</Dato>
-            <Dato label="Presentación de ofertas">
+            <Dato label={proceso.fuente === "live" ? "Consultas y observaciones (hasta)" : "Presentación de ofertas"}>
               {formatFecha(proceso.fechaLimitePresentacion)} (
               {formatDiasRestantes(proceso.fechaLimitePresentacion).toLowerCase()})
             </Dato>
