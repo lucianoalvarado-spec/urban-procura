@@ -9,6 +9,7 @@ import { generarId } from "@/lib/id";
 import { Card, CardBody, CardHeader } from "@/components/ui/card";
 import { TextField, NumberField, SelectField, CheckboxField } from "@/components/perfil/field";
 import type { ContratoImportable, ExperienciaOsceResultado } from "@/app/api/rnp/experiencia/route";
+import type { ObraImportable, ExperienciaObrasResultado } from "@/app/api/rnp/obras/route";
 
 const VACIO = {
   cliente: "",
@@ -35,6 +36,11 @@ export function ExperienciaCard() {
   const [candidatos, setCandidatos] = useState<ContratoImportable[] | null>(null);
   const [mensajeImport, setMensajeImport] = useState<string | null>(null);
   const [importados, setImportados] = useState<Set<string>>(new Set());
+
+  const [importandoObras, setImportandoObras] = useState(false);
+  const [obrasCandidatas, setObrasCandidatas] = useState<ObraImportable[] | null>(null);
+  const [mensajeObras, setMensajeObras] = useState<string | null>(null);
+  const [obrasImportadas, setObrasImportadas] = useState<Set<string>>(new Set());
 
   const eliminar = (id: string) => {
     actualizarDatosEmpresa({ experiencia: proveedor.experiencia.filter((e) => e.id !== id) });
@@ -88,6 +94,41 @@ export function ExperienciaCard() {
     setImportados((prev) => new Set(prev).add(contrato.codContProv));
   };
 
+  const buscarEnRnp = async () => {
+    setImportandoObras(true);
+    setObrasCandidatas(null);
+    setMensajeObras(null);
+    try {
+      const res = await fetch(`/api/rnp/obras?ruc=${proveedor.ruc}`);
+      const data = (await res.json()) as ExperienciaObrasResultado;
+      setObrasCandidatas(data.obras);
+      setMensajeObras(data.mensaje);
+    } catch {
+      setObrasCandidatas([]);
+      setMensajeObras("No pudimos conectarnos con el RNP ahora mismo.");
+    } finally {
+      setImportandoObras(false);
+    }
+  };
+
+  const importarObra = (obra: ObraImportable) => {
+    const nueva: ExperienciaProveedor = {
+      id: generarId("exp"),
+      cliente: obra.cliente,
+      objeto: obra.objeto,
+      especialidad: obra.categoria,
+      monto: obra.monto,
+      fecha: obra.fecha ?? "",
+      consorcio: obra.consorcio,
+      contratoAdjunto: obra.documentos.length > 0,
+      conformidadAdjunta: false,
+      documentos: obra.documentos,
+      fuente: "rnp",
+    };
+    actualizarDatosEmpresa({ experiencia: [...proveedor.experiencia, nueva] });
+    setObrasImportadas((prev) => new Set(prev).add(obra.codObra));
+  };
+
   return (
     <Card>
       <CardHeader
@@ -103,6 +144,16 @@ export function ExperienciaCard() {
                 className="rounded-lg border border-[var(--border)] px-3 py-1.5 text-xs font-medium text-slate-600 hover:bg-[var(--surface-muted)] disabled:opacity-50"
               >
                 {importando ? "Buscando en SEACE…" : "Importar del SEACE"}
+              </button>
+            )}
+            {esRucValido(proveedor.ruc) && (
+              <button
+                type="button"
+                onClick={buscarEnRnp}
+                disabled={importandoObras}
+                className="rounded-lg border border-[var(--border)] px-3 py-1.5 text-xs font-medium text-slate-600 hover:bg-[var(--surface-muted)] disabled:opacity-50"
+              >
+                {importandoObras ? "Buscando en el RNP…" : "Importar obras del RNP"}
               </button>
             )}
             {!agregando && (
@@ -166,6 +217,61 @@ export function ExperienciaCard() {
                     className="shrink-0 rounded-lg border border-[var(--border)] px-3 py-1.5 text-xs font-medium text-slate-600 hover:bg-[var(--surface-muted)] disabled:cursor-not-allowed disabled:opacity-50"
                   >
                     {yaImportado ? "Importado ✓" : "Importar"}
+                  </button>
+                </div>
+              );
+            })}
+          </div>
+        )}
+
+        {obrasCandidatas !== null && (
+          <div className="space-y-2 rounded-lg border border-[var(--border)] p-3">
+            <div className="flex items-center justify-between">
+              <p className="text-xs text-slate-500">{mensajeObras}</p>
+              <button
+                type="button"
+                onClick={() => setObrasCandidatas(null)}
+                className="text-xs font-medium text-slate-400 hover:text-slate-600"
+              >
+                Cerrar
+              </button>
+            </div>
+            {obrasCandidatas.map((o) => {
+              const yaImportada = obrasImportadas.has(o.codObra);
+              return (
+                <div
+                  key={o.codObra}
+                  className="flex items-start justify-between gap-3 rounded-lg border border-[var(--border)] p-2.5"
+                >
+                  <div className="min-w-0">
+                    <p className="text-sm font-medium text-slate-700">{o.objeto}</p>
+                    <p className="text-xs text-slate-500">
+                      {o.cliente} · {o.categoria} · {formatMonto(o.monto)}
+                      {o.fecha ? ` · ${formatFecha(o.fecha)}` : ""}
+                    </p>
+                    {o.documentos.length > 0 && (
+                      <div className="mt-1 flex flex-wrap gap-2">
+                        {o.documentos.map((doc) => (
+                          <a
+                            key={doc.url}
+                            href={doc.url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-xs text-[var(--brand-600)] hover:underline"
+                          >
+                            {doc.nombre}
+                          </a>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                  <button
+                    type="button"
+                    disabled={yaImportada}
+                    onClick={() => importarObra(o)}
+                    className="shrink-0 rounded-lg border border-[var(--border)] px-3 py-1.5 text-xs font-medium text-slate-600 hover:bg-[var(--surface-muted)] disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    {yaImportada ? "Importado ✓" : "Importar"}
                   </button>
                 </div>
               );
@@ -275,6 +381,7 @@ export function ExperienciaCard() {
                         {exp.objeto}
                         {exp.consorcio ? ` · Consorcio (${exp.porcentajeParticipacion}%)` : ""}
                         {exp.fuente === "seace" ? " · Importado del SEACE" : ""}
+                        {exp.fuente === "rnp" ? " · Acreditado en el RNP" : ""}
                       </p>
                     </td>
                     <td className="py-2 pr-3 text-slate-600">{exp.especialidad}</td>

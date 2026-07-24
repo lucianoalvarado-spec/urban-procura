@@ -114,7 +114,7 @@ export interface ExperienciaProveedor {
   conformidadAdjunta: boolean;
   /** Documentos reales (PDF) cuando la experiencia se importó del SEACE. */
   documentos?: DocumentoExperiencia[];
-  fuente?: "manual" | "seace";
+  fuente?: "manual" | "seace" | "rnp";
 }
 
 export interface PersonalClave {

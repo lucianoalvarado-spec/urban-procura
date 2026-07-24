@@ -13,10 +13,8 @@ import type { Categoria } from "@/lib/data/types";
 // entidad los publicó, links directos a los PDF del contrato en eap.oece.gob.pe/.../docs/seace/...
 //
 // La otra tarjeta de la ficha de OSCE ("Acreditada en el RNP", obras del expprov-bus)
-// no se integró: su endpoint (`expprov-bus/1.0/experiencia/{ruc}/`) devolvió
-// "Error en plataforma del servicio" de forma consistente en las pruebas — no se pudo
-// confirmar el contrato de parámetros correcto. Documentado para no repetir la pérdida
-// de tiempo si se retoma más adelante.
+// vive en su propio proxy: src/app/api/rnp/obras/route.ts (ver comentario ahí para el
+// contrato de parámetros que faltaba en el primer intento).
 
 const BASE = "https://eap.oece.gob.pe/perfilprov-bus/1.0";
 const LIMITE_CONTRATOS = 12;
