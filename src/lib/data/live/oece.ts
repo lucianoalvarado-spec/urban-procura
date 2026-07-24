@@ -322,7 +322,7 @@ export async function buscarProcesosLive(params: BusquedaLiveParams = {}): Promi
     if (catOcds) url.searchParams.set("category", catOcds);
 
     const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 8000);
+    const timeout = setTimeout(() => controller.abort(), 15000);
     const res = await fetch(url.toString(), {
       headers: { Accept: "application/json" },
       signal: controller.signal,
@@ -349,7 +349,7 @@ export function esIdProcesoLive(id: string): boolean {
 export async function obtenerProcesoLive(ocid: string): Promise<Proceso | null> {
   try {
     const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 8000);
+    const timeout = setTimeout(() => controller.abort(), 15000);
     const res = await fetch(`${BASE_URL}/record/${encodeURIComponent(ocid)}`, {
       headers: { Accept: "application/json" },
       signal: controller.signal,

@@ -75,23 +75,37 @@ export function ExperienciaCard() {
     }
   };
 
+  const mapContrato = (contrato: ContratoImportable): ExperienciaProveedor => ({
+    id: generarId("exp"),
+    cliente: contrato.cliente,
+    objeto: contrato.objeto,
+    especialidad: contrato.categoria,
+    monto: contrato.monto,
+    fecha: contrato.fecha ?? "",
+    consorcio: contrato.consorcio,
+    porcentajeParticipacion: contrato.porcentajeParticipacion,
+    contratoAdjunto: contrato.documentos.length > 0,
+    conformidadAdjunta: false,
+    documentos: contrato.documentos,
+    fuente: "seace",
+  });
+
   const importar = (contrato: ContratoImportable) => {
-    const nueva: ExperienciaProveedor = {
-      id: generarId("exp"),
-      cliente: contrato.cliente,
-      objeto: contrato.objeto,
-      especialidad: contrato.categoria,
-      monto: contrato.monto,
-      fecha: contrato.fecha ?? "",
-      consorcio: contrato.consorcio,
-      porcentajeParticipacion: contrato.porcentajeParticipacion,
-      contratoAdjunto: contrato.documentos.length > 0,
-      conformidadAdjunta: false,
-      documentos: contrato.documentos,
-      fuente: "seace",
-    };
-    actualizarDatosEmpresa({ experiencia: [...proveedor.experiencia, nueva] });
+    actualizarDatosEmpresa({ experiencia: [...proveedor.experiencia, mapContrato(contrato)] });
     setImportados((prev) => new Set(prev).add(contrato.codContProv));
+  };
+
+  const importarTodo = () => {
+    const pendientes = (candidatos ?? []).filter((c) => !importados.has(c.codContProv));
+    if (pendientes.length === 0) return;
+    actualizarDatosEmpresa({
+      experiencia: [...proveedor.experiencia, ...pendientes.map(mapContrato)],
+    });
+    setImportados((prev) => {
+      const next = new Set(prev);
+      pendientes.forEach((c) => next.add(c.codContProv));
+      return next;
+    });
   };
 
   const buscarEnRnp = async () => {
@@ -111,22 +125,36 @@ export function ExperienciaCard() {
     }
   };
 
+  const mapObra = (obra: ObraImportable): ExperienciaProveedor => ({
+    id: generarId("exp"),
+    cliente: obra.cliente,
+    objeto: obra.objeto,
+    especialidad: obra.categoria,
+    monto: obra.monto,
+    fecha: obra.fecha ?? "",
+    consorcio: obra.consorcio,
+    contratoAdjunto: obra.documentos.length > 0,
+    conformidadAdjunta: false,
+    documentos: obra.documentos,
+    fuente: "rnp",
+  });
+
   const importarObra = (obra: ObraImportable) => {
-    const nueva: ExperienciaProveedor = {
-      id: generarId("exp"),
-      cliente: obra.cliente,
-      objeto: obra.objeto,
-      especialidad: obra.categoria,
-      monto: obra.monto,
-      fecha: obra.fecha ?? "",
-      consorcio: obra.consorcio,
-      contratoAdjunto: obra.documentos.length > 0,
-      conformidadAdjunta: false,
-      documentos: obra.documentos,
-      fuente: "rnp",
-    };
-    actualizarDatosEmpresa({ experiencia: [...proveedor.experiencia, nueva] });
+    actualizarDatosEmpresa({ experiencia: [...proveedor.experiencia, mapObra(obra)] });
     setObrasImportadas((prev) => new Set(prev).add(obra.codObra));
+  };
+
+  const importarTodasLasObras = () => {
+    const pendientes = (obrasCandidatas ?? []).filter((o) => !obrasImportadas.has(o.codObra));
+    if (pendientes.length === 0) return;
+    actualizarDatosEmpresa({
+      experiencia: [...proveedor.experiencia, ...pendientes.map(mapObra)],
+    });
+    setObrasImportadas((prev) => {
+      const next = new Set(prev);
+      pendientes.forEach((o) => next.add(o.codObra));
+      return next;
+    });
   };
 
   return (
@@ -173,13 +201,24 @@ export function ExperienciaCard() {
           <div className="space-y-2 rounded-lg border border-[var(--border)] p-3">
             <div className="flex items-center justify-between">
               <p className="text-xs text-slate-500">{mensajeImport}</p>
-              <button
-                type="button"
-                onClick={() => setCandidatos(null)}
-                className="text-xs font-medium text-slate-400 hover:text-slate-600"
-              >
-                Cerrar
-              </button>
+              <div className="flex items-center gap-3">
+                {candidatos.some((c) => !importados.has(c.codContProv)) && (
+                  <button
+                    type="button"
+                    onClick={importarTodo}
+                    className="text-xs font-medium text-[var(--brand-600)] hover:underline"
+                  >
+                    Importar todo
+                  </button>
+                )}
+                <button
+                  type="button"
+                  onClick={() => setCandidatos(null)}
+                  className="text-xs font-medium text-slate-400 hover:text-slate-600"
+                >
+                  Cerrar
+                </button>
+              </div>
             </div>
             {candidatos.map((c) => {
               const yaImportado = importados.has(c.codContProv);
@@ -228,13 +267,24 @@ export function ExperienciaCard() {
           <div className="space-y-2 rounded-lg border border-[var(--border)] p-3">
             <div className="flex items-center justify-between">
               <p className="text-xs text-slate-500">{mensajeObras}</p>
-              <button
-                type="button"
-                onClick={() => setObrasCandidatas(null)}
-                className="text-xs font-medium text-slate-400 hover:text-slate-600"
-              >
-                Cerrar
-              </button>
+              <div className="flex items-center gap-3">
+                {obrasCandidatas.some((o) => !obrasImportadas.has(o.codObra)) && (
+                  <button
+                    type="button"
+                    onClick={importarTodasLasObras}
+                    className="text-xs font-medium text-[var(--brand-600)] hover:underline"
+                  >
+                    Importar todo
+                  </button>
+                )}
+                <button
+                  type="button"
+                  onClick={() => setObrasCandidatas(null)}
+                  className="text-xs font-medium text-slate-400 hover:text-slate-600"
+                >
+                  Cerrar
+                </button>
+              </div>
             </div>
             {obrasCandidatas.map((o) => {
               const yaImportada = obrasImportadas.has(o.codObra);

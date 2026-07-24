@@ -1,6 +1,8 @@
 import { listProcesos } from "@/lib/data/provider";
 import { OportunidadesClient } from "@/components/oportunidades/oportunidades-client";
 
+export const preferredRegion = "gru1";
+
 export default async function OportunidadesPage() {
   const procesos = await listProcesos();
 
