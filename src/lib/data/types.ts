@@ -13,6 +13,9 @@ export type Subcategoria =
   | "Suministro de bienes"
   | "Servicio general";
 
+// Opciones curadas para preferencias/filtros. Los procesos reales del OECE traen
+// su propio texto libre de procedimiento (ver Proceso.tipoProcedimiento) que no
+// siempre calza exacto con esta lista — es normal, son de épocas/normas distintas.
 export type TipoProcedimiento =
   | "Licitación Pública"
   | "Concurso Público"
@@ -29,21 +32,37 @@ export type EstadoProceso =
   | "Desierto";
 
 export type Region =
-  | "Lima"
-  | "La Libertad"
-  | "Piura"
-  | "Arequipa"
-  | "Cusco"
+  | "Amazonas"
   | "Áncash"
+  | "Apurímac"
+  | "Arequipa"
+  | "Ayacucho"
+  | "Cajamarca"
+  | "Callao"
+  | "Cusco"
+  | "Huancavelica"
+  | "Huánuco"
+  | "Ica"
   | "Junín"
+  | "La Libertad"
   | "Lambayeque"
+  | "Lima"
   | "Loreto"
-  | "Puno";
+  | "Madre de Dios"
+  | "Moquegua"
+  | "Pasco"
+  | "Piura"
+  | "Puno"
+  | "San Martín"
+  | "Tacna"
+  | "Tumbes"
+  | "Ucayali"
+  | "Otro";
 
 export interface DocumentoProceso {
-  tipo: "Bases administrativas" | "Bases integradas" | "Expediente técnico";
+  tipo: string;
   disponible: boolean;
-  urlMock: string;
+  url: string;
 }
 
 export interface EtapaCronograma {
@@ -59,17 +78,22 @@ export interface Proceso {
   descripcion: string;
   categoria: Categoria;
   subcategoria: Subcategoria;
-  tipoProcedimiento: TipoProcedimiento;
+  /** Texto libre: en datos reales viene tal cual lo publica la entidad, no siempre calza con TipoProcedimiento. */
+  tipoProcedimiento: string;
   estado: EstadoProceso;
   monedaSimbolo: "S/";
   montoReferencial: number;
   fechaPublicacion: string; // ISO date
   fechaLimitePresentacion: string; // ISO date
-  experienciaMinimaRequerida: number; // monto mínimo facturado acumulado exigido
+  experienciaMinimaRequerida: number; // monto mínimo facturado acumulado exigido; 0 = no especificado en la fuente
   especialistasRequeridos: string[];
   documentos: DocumentoProceso[];
   cronograma: EtapaCronograma[];
   riesgos: string[];
+  /** Si viene del Portal de Contrataciones Abiertas del OECE en vivo, o es dato de muestra. */
+  fuente?: "mock" | "live";
+  /** Link al proceso original en el Portal de Contrataciones Abiertas (solo si fuente === "live"). */
+  fuenteUrl?: string;
 }
 
 export interface DocumentoExperiencia {

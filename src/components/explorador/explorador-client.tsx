@@ -5,7 +5,7 @@ import Link from "next/link";
 import type { Proceso } from "@/lib/data/types";
 import { useProveedor } from "@/lib/state/proveedor-context";
 import { computeMatch } from "@/lib/data/matching";
-import { CATEGORIAS, ESTADOS_PROCESO, TIPOS_PROCEDIMIENTO } from "@/lib/data/constants";
+import { CATEGORIAS, ESTADOS_PROCESO } from "@/lib/data/constants";
 import { formatDiasRestantes, formatMonto } from "@/lib/format";
 import { Card, CardBody } from "@/components/ui/card";
 import { MatchBadge } from "@/components/ui/badge";
@@ -63,6 +63,13 @@ export function ExploradorClient({
       : procesos;
     return Array.from(new Set(fuente.map((p) => p.subcategoria))).sort();
   }, [procesos, filtros.categoria]);
+
+  const tiposProcedimientoDisponibles = useMemo(
+    () => Array.from(new Set(procesos.map((p) => p.tipoProcedimiento))).sort(),
+    [procesos]
+  );
+
+  const fuenteDatos = procesos[0]?.fuente ?? "mock";
 
   const resultados = useMemo(() => {
     const montoMin = filtros.montoMin ? Number(filtros.montoMin) : undefined;
@@ -124,6 +131,27 @@ export function ExploradorClient({
         </p>
       </div>
 
+      {fuenteDatos === "live" ? (
+        <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs text-emerald-800">
+          Procesos reales del{" "}
+          <a
+            href="https://contratacionesabiertas.oece.gob.pe/"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="underline"
+          >
+            Portal de Contrataciones Abiertas del OECE
+          </a>
+          . Nota: en esta vista la región no siempre viene detallada por la fuente — se completa
+          al abrir la ficha del proceso.
+        </div>
+      ) : (
+        <div className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800">
+          No pudimos conectarnos con el Portal de Contrataciones Abiertas del OECE en este
+          momento — estás viendo datos de muestra.
+        </div>
+      )}
+
       <Card>
         <CardBody className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
           <input
@@ -161,7 +189,7 @@ export function ExploradorClient({
             label="Tipo de procedimiento"
             value={filtros.tipoProcedimiento}
             onChange={(v) => updateFiltro("tipoProcedimiento", v)}
-            options={TIPOS_PROCEDIMIENTO}
+            options={tiposProcedimientoDisponibles}
           />
           <Select
             label="Estado"

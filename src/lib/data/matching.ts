@@ -79,7 +79,7 @@ export function computeMatch(
     faltantes.push("No coincide con tus palabras clave configuradas");
   }
 
-  if (preferencias.tiposProcedimiento.includes(proceso.tipoProcedimiento)) {
+  if ((preferencias.tiposProcedimiento as string[]).includes(proceso.tipoProcedimiento)) {
     score += PESOS.tipoProcedimiento;
     coincidencias.push(`Tipo de procedimiento preferido: ${proceso.tipoProcedimiento}`);
   } else {
@@ -90,7 +90,10 @@ export function computeMatch(
     .filter((exp) => exp.especialidad === proceso.categoria)
     .reduce((total, exp) => total + exp.monto, 0);
 
-  if (experienciaRelevante >= proceso.experienciaMinimaRequerida) {
+  if (proceso.experienciaMinimaRequerida <= 0) {
+    // La fuente no publica un mínimo de experiencia exigido (típico en datos live) —
+    // no sumamos ni descontamos, sería fabricar un criterio que no existe.
+  } else if (experienciaRelevante >= proceso.experienciaMinimaRequerida) {
     score += PESOS.experiencia;
     coincidencias.push("Cumples la experiencia mínima requerida en esta especialidad");
   } else if (experienciaRelevante > 0) {

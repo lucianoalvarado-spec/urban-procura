@@ -18,10 +18,24 @@ export function FichaClient({ proceso }: { proceso: Proceso }) {
 
   return (
     <div className="mx-auto flex max-w-4xl flex-col gap-6">
-      <div>
+      <div className="flex items-center justify-between gap-3">
         <Link href="/explorador" className="text-xs font-medium text-slate-500 hover:text-slate-700">
           ← Volver al explorador
         </Link>
+        {proceso.fuente === "live" ? (
+          <a
+            href={proceso.fuenteUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="rounded-full bg-emerald-50 px-2.5 py-0.5 text-xs font-medium text-emerald-700 hover:bg-emerald-100"
+          >
+            Proceso real — ver en el OECE ↗
+          </a>
+        ) : (
+          <span className="rounded-full bg-[var(--surface-muted)] px-2.5 py-0.5 text-xs font-medium text-slate-500">
+            Proceso de muestra
+          </span>
+        )}
       </div>
 
       <Card>
@@ -116,9 +130,15 @@ export function FichaClient({ proceso }: { proceso: Proceso }) {
         <CardHeader title="¿Qué piden?" subtitle="Experiencia mínima y especialistas requeridos" />
         <CardBody className="space-y-3">
           <p className="text-sm text-slate-600">
-            Experiencia mínima exigida:{" "}
-            <strong>{formatMonto(proceso.experienciaMinimaRequerida)}</strong> acumulada en{" "}
-            {proceso.categoria}.
+            {proceso.experienciaMinimaRequerida > 0 ? (
+              <>
+                Experiencia mínima exigida:{" "}
+                <strong>{formatMonto(proceso.experienciaMinimaRequerida)}</strong> acumulada en{" "}
+                {proceso.categoria}.
+              </>
+            ) : (
+              "La fuente de este proceso no publica un monto mínimo de experiencia."
+            )}
           </p>
           {proceso.especialistasRequeridos.length > 0 ? (
             <ul className="list-inside list-disc space-y-1 text-sm text-slate-600">
@@ -126,6 +146,11 @@ export function FichaClient({ proceso }: { proceso: Proceso }) {
                 <li key={especialista}>{especialista}</li>
               ))}
             </ul>
+          ) : proceso.fuente === "live" ? (
+            <p className="text-sm text-slate-400">
+              Esta fuente no publica el personal clave requerido — revisa las bases para
+              confirmarlo.
+            </p>
           ) : (
             <p className="text-sm text-slate-400">No se exige personal clave específico.</p>
           )}
@@ -135,46 +160,62 @@ export function FichaClient({ proceso }: { proceso: Proceso }) {
       <Card>
         <CardHeader
           title="Documentos del proceso"
-          subtitle="Documentos de muestra — en producción se descargarán desde la fuente oficial"
+          subtitle={
+            proceso.fuente === "live"
+              ? "Documentos reales publicados por la entidad en el SEACE"
+              : "Documentos de muestra — en producción se descargarán desde la fuente oficial"
+          }
         />
         <CardBody className="space-y-2">
-          {proceso.documentos.map((doc) => (
-            <div
-              key={doc.tipo}
-              className="flex items-center justify-between rounded-lg border border-[var(--border)] px-3 py-2"
-            >
-              <span className="text-sm text-slate-700">{doc.tipo}</span>
-              {doc.disponible ? (
-                <a
-                  href={doc.urlMock}
-                  className="rounded-md bg-[var(--brand-50)] px-2.5 py-1 text-xs font-medium text-[var(--brand-700)] hover:bg-[var(--brand-100)]"
-                >
-                  Ver documento (demo)
-                </a>
-              ) : (
-                <span className="text-xs font-medium text-slate-400">Aún no publicado</span>
-              )}
-            </div>
-          ))}
+          {proceso.documentos.length === 0 ? (
+            <p className="text-sm text-slate-400">
+              {proceso.fuente === "live"
+                ? "Esta entidad aún no publicó documentos para este proceso."
+                : "Sin documentos."}
+            </p>
+          ) : (
+            proceso.documentos.map((doc) => (
+              <div
+                key={doc.tipo + doc.url}
+                className="flex items-center justify-between rounded-lg border border-[var(--border)] px-3 py-2"
+              >
+                <span className="text-sm text-slate-700">{doc.tipo}</span>
+                {doc.disponible ? (
+                  <a
+                    href={doc.url}
+                    target={proceso.fuente === "live" ? "_blank" : undefined}
+                    rel={proceso.fuente === "live" ? "noopener noreferrer" : undefined}
+                    className="rounded-md bg-[var(--brand-50)] px-2.5 py-1 text-xs font-medium text-[var(--brand-700)] hover:bg-[var(--brand-100)]"
+                  >
+                    {proceso.fuente === "live" ? "Ver documento" : "Ver documento (demo)"}
+                  </a>
+                ) : (
+                  <span className="text-xs font-medium text-slate-400">Aún no publicado</span>
+                )}
+              </div>
+            ))
+          )}
         </CardBody>
       </Card>
 
-      <Card>
-        <CardHeader title="Cronograma" />
-        <CardBody>
-          <ol className="space-y-3">
-            {proceso.cronograma.map((etapa) => (
-              <li key={etapa.etapa} className="flex items-center gap-3 text-sm">
-                <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-[var(--brand-500)]" />
-                <span className="text-slate-600">{etapa.etapa}</span>
-                <span className="ml-auto shrink-0 text-xs font-medium text-slate-400">
-                  {formatFecha(etapa.fecha)}
-                </span>
-              </li>
-            ))}
-          </ol>
-        </CardBody>
-      </Card>
+      {proceso.cronograma.length > 0 && (
+        <Card>
+          <CardHeader title="Cronograma" />
+          <CardBody>
+            <ol className="space-y-3">
+              {proceso.cronograma.map((etapa) => (
+                <li key={etapa.etapa} className="flex items-center gap-3 text-sm">
+                  <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-[var(--brand-500)]" />
+                  <span className="text-slate-600">{etapa.etapa}</span>
+                  <span className="ml-auto shrink-0 text-xs font-medium text-slate-400">
+                    {formatFecha(etapa.fecha)}
+                  </span>
+                </li>
+              ))}
+            </ol>
+          </CardBody>
+        </Card>
+      )}
 
       {proceso.riesgos.length > 0 && (
         <Card>

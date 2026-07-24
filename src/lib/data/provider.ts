@@ -1,19 +1,27 @@
 import type { Proceso, Proveedor } from "@/lib/data/types";
 import { procesosMock } from "@/lib/data/mock/procesos";
 import { proveedorMock } from "@/lib/data/mock/proveedor";
+import { buscarProcesosLive, esIdProcesoLive, obtenerProcesoLive } from "@/lib/data/live/oece";
 
 // Capa de datos como adaptador reemplazable (ver docs/prompt-claude-code-urban-procura.md, sección 3).
 //
-// Hoy solo existe el modo "mock". El día que se conecte una fuente real (Portal de
-// Contrataciones Abiertas del OECE, RNP, etc.) se agrega un provider "live" que
-// implemente la misma interfaz, y si falla debe degradar a mock de forma VISIBLE,
-// nunca en silencio. `getDataMode()` es lo que la UI usa para mostrar el banner
-// de "datos de muestra".
+// `listProcesos`/`getProceso` intentan primero el Portal de Contrataciones Abiertas del
+// OECE (real, en vivo — ver src/lib/data/live/oece.ts) y degradan a los fixtures mock si
+// la fuente falla o no encuentra nada. Nunca en silencio: cada `Proceso` queda marcado con
+// `fuente: "mock" | "live"` para que la UI lo muestre explícitamente (ver components/
+// explorador/explorador-client.tsx y components/ficha/ficha-client.tsx).
+//
+// El perfil del proveedor sigue siendo 100% mock salvo lo que el propio usuario trajo desde
+// el RNP/SEACE en /registro y /perfil (ver lib/state/empresa-store.ts) — esta capa no toca eso.
 
 export type DataMode = "mock" | "live";
 
 export function getDataMode(): DataMode {
   return "mock";
+}
+
+function tagMock(procesos: Proceso[]): Proceso[] {
+  return procesos.map((p) => ({ ...p, fuente: p.fuente ?? "mock" }));
 }
 
 export interface ProcesosFilter {
@@ -35,7 +43,7 @@ async function simulateLatency<T>(value: T): Promise<T> {
   return value;
 }
 
-export async function listProcesos(filter: ProcesosFilter = {}): Promise<Proceso[]> {
+function filtrarMock(filter: ProcesosFilter): Proceso[] {
   const {
     query,
     region,
@@ -50,7 +58,7 @@ export async function listProcesos(filter: ProcesosFilter = {}): Promise<Proceso
 
   const normalizedQuery = query?.trim().toLowerCase();
 
-  const results = procesosMock.filter((proceso) => {
+  return procesosMock.filter((proceso) => {
     if (normalizedQuery) {
       const haystack = `${proceso.objeto} ${proceso.descripcion} ${proceso.entidad}`.toLowerCase();
       if (!haystack.includes(normalizedQuery)) return false;
@@ -65,12 +73,25 @@ export async function listProcesos(filter: ProcesosFilter = {}): Promise<Proceso
     if (typeof montoMax === "number" && proceso.montoReferencial > montoMax) return false;
     return true;
   });
+}
 
-  return simulateLatency(results);
+export async function listProcesos(filter: ProcesosFilter = {}): Promise<Proceso[]> {
+  const live = await buscarProcesosLive({
+    query: filter.query,
+    categoria: filter.categoria as Proceso["categoria"] | undefined,
+  });
+  if (live) return live;
+
+  return simulateLatency(tagMock(filtrarMock(filter)));
 }
 
 export async function getProceso(id: string): Promise<Proceso | undefined> {
-  return simulateLatency(procesosMock.find((proceso) => proceso.id === id));
+  if (esIdProcesoLive(id)) {
+    const live = await obtenerProcesoLive(id);
+    if (live) return live;
+  }
+  const mock = procesosMock.find((proceso) => proceso.id === id);
+  return simulateLatency(mock ? { ...mock, fuente: "mock" } : undefined);
 }
 
 export async function getProveedor(): Promise<Proveedor> {

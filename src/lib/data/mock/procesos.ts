@@ -27,8 +27,8 @@ export const procesosMock: Proceso[] = [
       "Especialista en seguridad y salud ocupacional",
     ],
     documentos: [
-      { tipo: "Bases integradas", disponible: true, urlMock: "#bases-op-2026-0142" },
-      { tipo: "Expediente técnico", disponible: true, urlMock: "#expediente-op-2026-0142" },
+      { tipo: "Bases integradas", disponible: true, url: "#bases-op-2026-0142" },
+      { tipo: "Expediente técnico", disponible: true, url: "#expediente-op-2026-0142" },
     ],
     cronograma: [
       { etapa: "Registro de participantes", fecha: "2026-07-14" },
@@ -64,8 +64,8 @@ export const procesosMock: Proceso[] = [
       "Especialista en impacto ambiental",
     ],
     documentos: [
-      { tipo: "Bases integradas", disponible: true, urlMock: "#bases-op-2026-0156" },
-      { tipo: "Expediente técnico", disponible: false, urlMock: "#" },
+      { tipo: "Bases integradas", disponible: true, url: "#bases-op-2026-0156" },
+      { tipo: "Expediente técnico", disponible: false, url: "#" },
     ],
     cronograma: [
       { etapa: "Registro de participantes", fecha: "2026-07-18" },
@@ -96,8 +96,8 @@ export const procesosMock: Proceso[] = [
       "Especialista en instalaciones sanitarias hospitalarias",
     ],
     documentos: [
-      { tipo: "Bases integradas", disponible: true, urlMock: "#bases-op-2026-0161" },
-      { tipo: "Expediente técnico", disponible: true, urlMock: "#expediente-op-2026-0161" },
+      { tipo: "Bases integradas", disponible: true, url: "#bases-op-2026-0161" },
+      { tipo: "Expediente técnico", disponible: true, url: "#expediente-op-2026-0161" },
     ],
     cronograma: [
       { etapa: "Registro de participantes", fecha: "2026-07-02" },
@@ -123,7 +123,7 @@ export const procesosMock: Proceso[] = [
     fechaLimitePresentacion: "2026-07-30",
     experienciaMinimaRequerida: 200_000,
     especialistasRequeridos: [],
-    documentos: [{ tipo: "Bases integradas", disponible: true, urlMock: "#bases-op-2026-0173" }],
+    documentos: [{ tipo: "Bases integradas", disponible: true, url: "#bases-op-2026-0173" }],
     cronograma: [
       { etapa: "Registro de participantes", fecha: "2026-07-21" },
       { etapa: "Presentación de ofertas", fecha: "2026-07-30" },
@@ -153,8 +153,8 @@ export const procesosMock: Proceso[] = [
       "Especialista en seguridad y salud ocupacional",
     ],
     documentos: [
-      { tipo: "Bases integradas", disponible: true, urlMock: "#bases-op-2026-0180" },
-      { tipo: "Expediente técnico", disponible: true, urlMock: "#expediente-op-2026-0180" },
+      { tipo: "Bases integradas", disponible: true, url: "#bases-op-2026-0180" },
+      { tipo: "Expediente técnico", disponible: true, url: "#expediente-op-2026-0180" },
     ],
     cronograma: [
       { etapa: "Registro de participantes", fecha: "2026-07-09" },
@@ -184,7 +184,7 @@ export const procesosMock: Proceso[] = [
     fechaLimitePresentacion: "2026-07-31",
     experienciaMinimaRequerida: 150_000,
     especialistasRequeridos: ["Consultor individual (ingeniero sanitario, colegiado)"],
-    documentos: [{ tipo: "Bases integradas", disponible: true, urlMock: "#bases-op-2026-0188" }],
+    documentos: [{ tipo: "Bases integradas", disponible: true, url: "#bases-op-2026-0188" }],
     cronograma: [
       { etapa: "Presentación de expresión de interés", fecha: "2026-07-24" },
       { etapa: "Presentación de ofertas", fecha: "2026-07-31" },
@@ -213,8 +213,8 @@ export const procesosMock: Proceso[] = [
       "Especialista en plantas de tratamiento",
     ],
     documentos: [
-      { tipo: "Bases integradas", disponible: true, urlMock: "#bases-op-2026-0195" },
-      { tipo: "Expediente técnico", disponible: true, urlMock: "#expediente-op-2026-0195" },
+      { tipo: "Bases integradas", disponible: true, url: "#bases-op-2026-0195" },
+      { tipo: "Expediente técnico", disponible: true, url: "#expediente-op-2026-0195" },
     ],
     cronograma: [
       { etapa: "Presentación de ofertas", fecha: "2026-06-25" },
@@ -242,7 +242,7 @@ export const procesosMock: Proceso[] = [
       "Jefe de proyecto (arquitecto o ingeniero civil)",
       "Especialista en estructuras",
     ],
-    documentos: [{ tipo: "Bases integradas", disponible: true, urlMock: "#bases-op-2026-0201" }],
+    documentos: [{ tipo: "Bases integradas", disponible: true, url: "#bases-op-2026-0201" }],
     cronograma: [
       { etapa: "Registro de participantes", fecha: "2026-07-16" },
       { etapa: "Presentación de ofertas", fecha: "2026-08-06" },
@@ -267,7 +267,7 @@ export const procesosMock: Proceso[] = [
     fechaLimitePresentacion: "2026-07-28",
     experienciaMinimaRequerida: 270_000,
     especialistasRequeridos: ["Ingeniero responsable técnico"],
-    documentos: [{ tipo: "Bases integradas", disponible: true, urlMock: "#bases-op-2026-0207" }],
+    documentos: [{ tipo: "Bases integradas", disponible: true, url: "#bases-op-2026-0207" }],
     cronograma: [
       { etapa: "Registro de participantes", fecha: "2026-07-22" },
       { etapa: "Presentación de ofertas", fecha: "2026-07-28" },
@@ -293,8 +293,8 @@ export const procesosMock: Proceso[] = [
     experienciaMinimaRequerida: 900_000,
     especialistasRequeridos: ["Ingeniero Residente de Obra"],
     documentos: [
-      { tipo: "Bases integradas", disponible: true, urlMock: "#bases-op-2026-0214" },
-      { tipo: "Expediente técnico", disponible: true, urlMock: "#expediente-op-2026-0214" },
+      { tipo: "Bases integradas", disponible: true, url: "#bases-op-2026-0214" },
+      { tipo: "Expediente técnico", disponible: true, url: "#expediente-op-2026-0214" },
     ],
     cronograma: [
       { etapa: "Registro de participantes", fecha: "2026-07-14" },
@@ -320,7 +320,7 @@ export const procesosMock: Proceso[] = [
     fechaLimitePresentacion: "2026-06-30",
     experienciaMinimaRequerida: 350_000,
     especialistasRequeridos: ["Jefe de proyecto (ingeniero civil)", "Especialista hidráulico"],
-    documentos: [{ tipo: "Bases integradas", disponible: true, urlMock: "#bases-op-2026-0219" }],
+    documentos: [{ tipo: "Bases integradas", disponible: true, url: "#bases-op-2026-0219" }],
     cronograma: [{ etapa: "Presentación de ofertas", fecha: "2026-06-30" }],
     riesgos: ["Primera convocatoria declarada desierta por falta de postores."],
   },
@@ -340,7 +340,7 @@ export const procesosMock: Proceso[] = [
     fechaLimitePresentacion: "2026-08-10",
     experienciaMinimaRequerida: 1_600_000,
     especialistasRequeridos: ["Ingeniero biomédico responsable"],
-    documentos: [{ tipo: "Bases integradas", disponible: true, urlMock: "#bases-op-2026-0226" }],
+    documentos: [{ tipo: "Bases integradas", disponible: true, url: "#bases-op-2026-0226" }],
     cronograma: [
       { etapa: "Registro de participantes", fecha: "2026-07-12" },
       { etapa: "Presentación de ofertas", fecha: "2026-08-10" },
@@ -365,8 +365,8 @@ export const procesosMock: Proceso[] = [
     experienciaMinimaRequerida: 250_000,
     especialistasRequeridos: ["Supervisor de obra (ingeniero civil)"],
     documentos: [
-      { tipo: "Bases integradas", disponible: true, urlMock: "#bases-op-2026-0231" },
-      { tipo: "Expediente técnico", disponible: true, urlMock: "#expediente-op-2026-0231" },
+      { tipo: "Bases integradas", disponible: true, url: "#bases-op-2026-0231" },
+      { tipo: "Expediente técnico", disponible: true, url: "#expediente-op-2026-0231" },
     ],
     cronograma: [
       { etapa: "Presentación de ofertas", fecha: "2026-07-26" },
@@ -395,8 +395,8 @@ export const procesosMock: Proceso[] = [
       "Especialista ambiental",
     ],
     documentos: [
-      { tipo: "Bases integradas", disponible: true, urlMock: "#bases-op-2026-0238" },
-      { tipo: "Expediente técnico", disponible: true, urlMock: "#expediente-op-2026-0238" },
+      { tipo: "Bases integradas", disponible: true, url: "#bases-op-2026-0238" },
+      { tipo: "Expediente técnico", disponible: true, url: "#expediente-op-2026-0238" },
     ],
     cronograma: [
       { etapa: "Registro de participantes", fecha: "2026-07-04" },
