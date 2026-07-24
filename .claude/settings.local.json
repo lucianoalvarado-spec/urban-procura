@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(find \"/c/Users/User/Desktop/URBAN PLACE\" -iname \"*urban-procura*\" 2>/dev/null)",
+      "Bash(npm -v)",
+      "PowerShell(node -v)",
+      "PowerShell(npm -v)",
+      "PowerShell($env:Path += \";C:\\\\Program Files\\\\nodejs\"; node -v; npm -v)",
+      "Bash(ls \"/c/Program Files/nodejs\" | grep -i npm)"
+    ]
+  }
+}
