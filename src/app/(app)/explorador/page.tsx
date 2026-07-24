@@ -9,8 +9,5 @@ export const preferredRegion = "gru1";
 export default async function ExploradorPage() {
   const procesos = await listProcesos();
 
-  const entidades = Array.from(new Set(procesos.map((p) => p.entidad))).sort();
-  const regiones = Array.from(new Set(procesos.map((p) => p.region))).sort();
-
-  return <ExploradorClient procesos={procesos} entidades={entidades} regiones={regiones} />;
+  return <ExploradorClient procesos={procesos} />;
 }

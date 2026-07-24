@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import type { Proceso } from "@/lib/data/types";
 import { useProveedor } from "@/lib/state/proveedor-context";
@@ -41,15 +41,7 @@ const FILTROS_INICIALES: Filtros = {
   montoMax: "",
 };
 
-export function ExploradorClient({
-  procesos,
-  entidades,
-  regiones,
-}: {
-  procesos: Proceso[];
-  entidades: string[];
-  regiones: string[];
-}) {
+export function ExploradorClient({ procesos }: { procesos: Proceso[] }) {
   const { proveedor } = useProveedor();
   const [filtros, setFiltros] = useState<Filtros>(FILTROS_INICIALES);
   const [orden, setOrden] = useState<Orden>("match");
@@ -57,30 +49,79 @@ export function ExploradorClient({
   const limitadoPorPlan = proveedor.plan === "free";
   const ordenEfectivo = orden === "match" && !puedeMatchCrm ? "plazo" : orden;
 
-  const subcategoriasDisponibles = useMemo(() => {
-    const fuente = filtros.categoria
-      ? procesos.filter((p) => p.categoria === filtros.categoria)
-      : procesos;
-    return Array.from(new Set(fuente.map((p) => p.subcategoria))).sort();
-  }, [procesos, filtros.categoria]);
+  // Búsqueda en vivo: el lote inicial (`procesos`, prop) es fijo y nunca va a contener
+  // todas las entidades del portal (~2.7M de registros históricos). Cuando el usuario
+  // escribe algo, en vez de filtrar solo ese lote le pedimos a la API real ese texto
+  // (matchea también contra el nombre de la entidad compradora, ej. "PROVIAS",
+  // "SEDAPAL") y usamos esos resultados como set activo mientras dure la búsqueda.
+  const [resultadosBusqueda, setResultadosBusqueda] = useState<Proceso[] | null>(null);
+  const [buscando, setBuscando] = useState(false);
+  const [busquedaFallo, setBusquedaFallo] = useState(false);
 
-  const tiposProcedimientoDisponibles = useMemo(
-    () => Array.from(new Set(procesos.map((p) => p.tipoProcedimiento))).sort(),
-    [procesos]
+  useEffect(() => {
+    const query = filtros.query.trim();
+    if (!query) {
+      setResultadosBusqueda(null);
+      setBusquedaFallo(false);
+      return;
+    }
+    let cancelado = false;
+    setBuscando(true);
+    const timeout = setTimeout(() => {
+      const params = new URLSearchParams({ search: query, paginateBy: "100" });
+      if (filtros.categoria) params.set("categoria", filtros.categoria);
+      fetch(`/api/procesos/buscar?${params.toString()}`)
+        .then((r) => r.json())
+        .then((data: { disponible: boolean; procesos: Proceso[] }) => {
+          if (cancelado) return;
+          setResultadosBusqueda(data.disponible ? data.procesos : []);
+          setBusquedaFallo(!data.disponible);
+        })
+        .catch(() => {
+          if (cancelado) return;
+          setResultadosBusqueda([]);
+          setBusquedaFallo(true);
+        })
+        .finally(() => {
+          if (!cancelado) setBuscando(false);
+        });
+    }, 400);
+    return () => {
+      cancelado = true;
+      clearTimeout(timeout);
+      setBuscando(false);
+    };
+  }, [filtros.query, filtros.categoria]);
+
+  const procesosActivos = resultadosBusqueda ?? procesos;
+  const entidadesActivas = useMemo(
+    () => Array.from(new Set(procesosActivos.map((p) => p.entidad))).sort(),
+    [procesosActivos]
+  );
+  const regionesActivas = useMemo(
+    () => Array.from(new Set(procesosActivos.map((p) => p.region))).sort(),
+    [procesosActivos]
   );
 
-  const fuenteDatos = procesos[0]?.fuente ?? "mock";
+  const subcategoriasDisponibles = useMemo(() => {
+    const fuente = filtros.categoria
+      ? procesosActivos.filter((p) => p.categoria === filtros.categoria)
+      : procesosActivos;
+    return Array.from(new Set(fuente.map((p) => p.subcategoria))).sort();
+  }, [procesosActivos, filtros.categoria]);
+
+  const tiposProcedimientoDisponibles = useMemo(
+    () => Array.from(new Set(procesosActivos.map((p) => p.tipoProcedimiento))).sort(),
+    [procesosActivos]
+  );
+
+  const fuenteDatos = procesosActivos[0]?.fuente ?? procesos[0]?.fuente ?? "mock";
 
   const resultados = useMemo(() => {
     const montoMin = filtros.montoMin ? Number(filtros.montoMin) : undefined;
     const montoMax = filtros.montoMax ? Number(filtros.montoMax) : undefined;
-    const query = filtros.query.trim().toLowerCase();
 
-    const filtrados = procesos.filter((p) => {
-      if (query) {
-        const haystack = `${p.objeto} ${p.descripcion} ${p.entidad}`.toLowerCase();
-        if (!haystack.includes(query)) return false;
-      }
+    const filtrados = procesosActivos.filter((p) => {
       if (filtros.region && p.region !== filtros.region) return false;
       if (filtros.entidad && p.entidad !== filtros.entidad) return false;
       if (filtros.categoria && p.categoria !== filtros.categoria) return false;
@@ -108,7 +149,7 @@ export function ExploradorClient({
     });
 
     return conMatch;
-  }, [procesos, filtros, ordenEfectivo, proveedor]);
+  }, [procesosActivos, filtros, ordenEfectivo, proveedor]);
 
   const resultadosVisibles = limitadoPorPlan
     ? resultados.slice(0, LIMITE_PLAN_FREE)
@@ -127,7 +168,7 @@ export function ExploradorClient({
       <div>
         <h1 className="text-xl font-semibold text-[var(--foreground)]">Explorador inteligente</h1>
         <p className="text-sm text-slate-500">
-          {resultadosVisibles.length} de {procesos.length} procesos · ¿cuáles me convienen?
+          {resultadosVisibles.length} de {procesosActivos.length} procesos · ¿cuáles me convienen?
         </p>
       </div>
 
@@ -154,24 +195,35 @@ export function ExploradorClient({
 
       <Card>
         <CardBody className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
-          <input
-            type="text"
-            placeholder="Buscar por objeto, entidad o descripción"
-            value={filtros.query}
-            onChange={(e) => updateFiltro("query", e.target.value)}
-            className="col-span-full rounded-lg border border-[var(--border)] px-3 py-2 text-sm focus:border-[var(--brand-500)] focus:outline-none"
-          />
+          <div className="col-span-full flex flex-col gap-1">
+            <input
+              type="text"
+              placeholder="Buscar por objeto, entidad o descripción — ej. PROVIAS, SEDAPAL, PNSR"
+              value={filtros.query}
+              onChange={(e) => updateFiltro("query", e.target.value)}
+              className="rounded-lg border border-[var(--border)] px-3 py-2 text-sm focus:border-[var(--brand-500)] focus:outline-none"
+            />
+            {filtros.query.trim() && (
+              <p className="text-xs text-slate-400">
+                {buscando
+                  ? "Buscando en el Portal de Contrataciones Abiertas…"
+                  : busquedaFallo
+                    ? "No pudimos conectarnos con el Portal en este momento — mostrando el lote inicial."
+                    : `${resultadosBusqueda?.length ?? 0} resultado(s) en vivo para "${filtros.query.trim()}".`}
+              </p>
+            )}
+          </div>
           <Select
             label="Región"
             value={filtros.region}
             onChange={(v) => updateFiltro("region", v)}
-            options={regiones}
+            options={regionesActivas}
           />
           <Select
             label="Entidad"
             value={filtros.entidad}
             onChange={(v) => updateFiltro("entidad", v)}
-            options={entidades}
+            options={entidadesActivas}
           />
           <Select
             label="Categoría"

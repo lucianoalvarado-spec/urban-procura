@@ -315,7 +315,7 @@ export async function buscarProcesosLive(params: BusquedaLiveParams = {}): Promi
   try {
     const url = new URL(`${BASE_URL}/search`);
     url.searchParams.set("page", "1");
-    url.searchParams.set("paginateBy", String(params.paginateBy ?? 40));
+    url.searchParams.set("paginateBy", String(params.paginateBy ?? 60));
     url.searchParams.set("format", "json");
     if (params.query) url.searchParams.set("search", params.query);
     const catOcds = params.categoria ? CATEGORIA_A_OCDS[params.categoria] : undefined;
