@@ -17,6 +17,12 @@ export function MarketingHeader() {
           >
             Planes
           </Link>
+          <Link
+            href="/blog"
+            className="hidden px-3 py-2 text-slate-600 hover:text-slate-900 sm:inline"
+          >
+            Blog
+          </Link>
           <Link href="/login" className="px-3 py-2 text-slate-600 hover:text-slate-900">
             Iniciar sesión
           </Link>

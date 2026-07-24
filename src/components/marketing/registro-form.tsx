@@ -54,6 +54,7 @@ export function RegistroForm() {
 
   // Paso 3: contraseña
   const [contrasena, setContrasena] = useState("");
+  const [aceptaTerminos, setAceptaTerminos] = useState(false);
 
   const buscarRuc = async () => {
     if (!esRucValido(ruc)) return;
@@ -98,6 +99,7 @@ export function RegistroForm() {
 
   const crearCuenta = (e: React.FormEvent) => {
     e.preventDefault();
+    if (!aceptaTerminos) return;
 
     const razonSocial =
       rnp?.encontrado && rnp.razonSocial ? rnp.razonSocial : razonSocialManual.trim();
@@ -359,6 +361,26 @@ export function RegistroForm() {
                 </div>
               </div>
 
+              <label className="flex items-start gap-2 text-xs text-slate-600">
+                <input
+                  type="checkbox"
+                  checked={aceptaTerminos}
+                  onChange={(e) => setAceptaTerminos(e.target.checked)}
+                  className="mt-0.5 h-4 w-4 shrink-0 rounded border-[var(--border)]"
+                />
+                <span>
+                  Acepto los{" "}
+                  <Link href="/terminos" target="_blank" className="font-medium text-[var(--brand-600)] hover:underline">
+                    Términos y Condiciones
+                  </Link>{" "}
+                  y el{" "}
+                  <Link href="/legal" target="_blank" className="font-medium text-[var(--brand-600)] hover:underline">
+                    Aviso legal
+                  </Link>
+                  .
+                </span>
+              </label>
+
               <div className="flex items-center justify-between">
                 <button
                   type="button"
@@ -369,7 +391,8 @@ export function RegistroForm() {
                 </button>
                 <button
                   type="submit"
-                  className="rounded-lg bg-[var(--brand-600)] px-4 py-2 text-sm font-medium text-white hover:bg-[var(--brand-700)]"
+                  disabled={!aceptaTerminos}
+                  className="rounded-lg bg-[var(--brand-600)] px-4 py-2 text-sm font-medium text-white hover:bg-[var(--brand-700)] disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   Crear cuenta
                 </button>
