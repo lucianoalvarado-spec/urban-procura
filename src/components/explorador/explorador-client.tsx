@@ -12,6 +12,7 @@ import { MatchBadge } from "@/components/ui/badge";
 import { EstadoCrmSelect } from "@/components/crm/estado-crm-select";
 import { UpgradeNotice, LockedInline } from "@/components/plan/upgrade-notice";
 import { cumplePlan } from "@/lib/plan";
+import type { EntidadSugerida, EntidadesBuscarResultado } from "@/app/api/entidades/buscar/route";
 
 const LIMITE_PLAN_FREE = 5;
 
@@ -58,9 +59,13 @@ export function ExploradorClient({ procesos }: { procesos: Proceso[] }) {
   const [buscando, setBuscando] = useState(false);
   const [busquedaFallo, setBusquedaFallo] = useState(false);
 
+  // El texto libre manda; si está vacío pero hay una entidad elegida (del catálogo
+  // completo de ~3,316 entidades, no del lote local), usamos su nombre como término de
+  // búsqueda para traer procesos reales de esa entidad específica.
+  const terminoBusquedaLive = filtros.query.trim() || filtros.entidad.trim();
+
   useEffect(() => {
-    const query = filtros.query.trim();
-    if (!query) {
+    if (!terminoBusquedaLive) {
       setResultadosBusqueda(null);
       setBusquedaFallo(false);
       return;
@@ -68,7 +73,7 @@ export function ExploradorClient({ procesos }: { procesos: Proceso[] }) {
     let cancelado = false;
     setBuscando(true);
     const timeout = setTimeout(() => {
-      const params = new URLSearchParams({ search: query, paginateBy: "100" });
+      const params = new URLSearchParams({ search: terminoBusquedaLive, paginateBy: "100" });
       if (filtros.categoria) params.set("categoria", filtros.categoria);
       fetch(`/api/procesos/buscar?${params.toString()}`)
         .then((r) => r.json())
@@ -91,7 +96,7 @@ export function ExploradorClient({ procesos }: { procesos: Proceso[] }) {
       clearTimeout(timeout);
       setBuscando(false);
     };
-  }, [filtros.query, filtros.categoria]);
+  }, [terminoBusquedaLive, filtros.categoria]);
 
   const procesosActivos = resultadosBusqueda ?? procesos;
   const entidadesActivas = useMemo(
@@ -199,13 +204,13 @@ export function ExploradorClient({ procesos }: { procesos: Proceso[] }) {
               onChange={(e) => updateFiltro("query", e.target.value)}
               className="rounded-lg border border-[var(--border)] px-3 py-2 text-sm focus:border-[var(--brand-500)] focus:outline-none"
             />
-            {filtros.query.trim() && (
+            {terminoBusquedaLive && (
               <p className="text-xs text-slate-400">
                 {buscando
                   ? "Buscando en el Portal de Contrataciones Abiertas…"
                   : busquedaFallo
                     ? "No pudimos conectarnos con el Portal en este momento — mostrando el lote inicial."
-                    : `${resultadosBusqueda?.length ?? 0} resultado(s) en vivo para "${filtros.query.trim()}".`}
+                    : `${resultadosBusqueda?.length ?? 0} resultado(s) en vivo para "${terminoBusquedaLive}".`}
               </p>
             )}
           </div>
@@ -219,7 +224,7 @@ export function ExploradorClient({ procesos }: { procesos: Proceso[] }) {
             label="Entidad"
             value={filtros.entidad}
             onChange={(v) => updateFiltro("entidad", v)}
-            options={entidadesActivas}
+            sugerenciasLocales={entidadesActivas}
           />
           <Select
             label="Categoría"
@@ -376,33 +381,75 @@ function Select({
   );
 }
 
-const LIMITE_SUGERENCIAS_ENTIDAD = 30;
+const LIMITE_SUGERENCIAS_ENTIDAD = 20;
 
+// A diferencia de Región/Categoría/etc., "Entidad" no busca sobre el lote de procesos
+// cargado (~60-100) sino contra el catálogo completo de ~3,316 entidades registradas en
+// el Portal (`/api/entidades/buscar`, proxy de `/api/v1/buyers`) — de otro modo,
+// ministerios/municipalidades que no tuvieran un proceso reciente en ese lote nunca
+// aparecerían como opción, aunque existan y publiquen normalmente.
 function EntitySelect({
   label,
   value,
   onChange,
-  options,
+  sugerenciasLocales,
 }: {
   label: string;
   value: string;
   onChange: (value: string) => void;
-  options: string[];
+  sugerenciasLocales: string[];
 }) {
   const [abierto, setAbierto] = useState(false);
   const [texto, setTexto] = useState("");
+  const [sugerenciasCatalogo, setSugerenciasCatalogo] = useState<EntidadSugerida[] | null>(null);
+  const [buscando, setBuscando] = useState(false);
 
-  const sugerencias = useMemo(() => {
+  useEffect(() => {
+    const q = texto.trim();
+    if (q.length < 2) {
+      setSugerenciasCatalogo(null);
+      return;
+    }
+    let cancelado = false;
+    setBuscando(true);
+    const timeout = setTimeout(() => {
+      fetch(`/api/entidades/buscar?q=${encodeURIComponent(q)}`)
+        .then((r) => r.json())
+        .then((data: EntidadesBuscarResultado) => {
+          if (cancelado) return;
+          setSugerenciasCatalogo(data.disponible ? data.entidades : []);
+        })
+        .catch(() => {
+          if (!cancelado) setSugerenciasCatalogo([]);
+        })
+        .finally(() => {
+          if (!cancelado) setBuscando(false);
+        });
+    }, 350);
+    return () => {
+      cancelado = true;
+      clearTimeout(timeout);
+      setBuscando(false);
+    };
+  }, [texto]);
+
+  const sugerenciasFallback = useMemo(() => {
     const q = texto.trim().toLowerCase();
-    const base = q ? options.filter((o) => o.toLowerCase().includes(q)) : options;
+    const base = q
+      ? sugerenciasLocales.filter((o) => o.toLowerCase().includes(q))
+      : sugerenciasLocales;
     return base.slice(0, LIMITE_SUGERENCIAS_ENTIDAD);
-  }, [options, texto]);
+  }, [sugerenciasLocales, texto]);
 
   const elegir = (opcion: string) => {
     onChange(opcion);
     setTexto("");
+    setSugerenciasCatalogo(null);
     setAbierto(false);
   };
+
+  const usandoCatalogo = texto.trim().length >= 2;
+  const sugerencias = usandoCatalogo ? (sugerenciasCatalogo ?? []) : null;
 
   return (
     <div className="relative flex flex-col gap-1 text-xs font-medium text-slate-500">
@@ -410,14 +457,14 @@ function EntitySelect({
       <input
         type="text"
         value={abierto ? texto : value}
-        placeholder="Todas — escribe para buscar"
+        placeholder="Todas — escribe para buscar (ej. ministerio, municipalidad)"
         onFocus={() => setAbierto(true)}
         onChange={(e) => setTexto(e.target.value)}
         onBlur={() => setTimeout(() => setAbierto(false), 150)}
         className="rounded-lg border border-[var(--border)] px-2.5 py-2 text-sm text-[var(--foreground)] focus:border-[var(--brand-500)] focus:outline-none"
       />
       {abierto && (
-        <div className="absolute top-full left-0 z-10 mt-1 max-h-64 w-full min-w-[280px] overflow-y-auto rounded-lg border border-[var(--border)] bg-[var(--surface)] shadow-lg">
+        <div className="absolute top-full left-0 z-10 mt-1 max-h-64 w-full min-w-[320px] overflow-y-auto rounded-lg border border-[var(--border)] bg-[var(--surface)] shadow-lg">
           <button
             type="button"
             onMouseDown={() => elegir("")}
@@ -425,18 +472,42 @@ function EntitySelect({
           >
             Todas
           </button>
-          {sugerencias.map((opcion) => (
-            <button
-              key={opcion}
-              type="button"
-              onMouseDown={() => elegir(opcion)}
-              className="block w-full px-3 py-2 text-left text-sm text-[var(--foreground)] hover:bg-[var(--surface-muted)]"
-            >
-              {opcion}
-            </button>
-          ))}
-          {sugerencias.length === 0 && (
-            <p className="px-3 py-2 text-xs text-slate-400">Sin coincidencias</p>
+          {!usandoCatalogo &&
+            sugerenciasFallback.map((opcion) => (
+              <button
+                key={opcion}
+                type="button"
+                onMouseDown={() => elegir(opcion)}
+                className="block w-full px-3 py-2 text-left text-sm text-[var(--foreground)] hover:bg-[var(--surface-muted)]"
+              >
+                {opcion}
+              </button>
+            ))}
+          {usandoCatalogo && buscando && (
+            <p className="px-3 py-2 text-xs text-slate-400">Buscando en el catálogo del OECE…</p>
+          )}
+          {usandoCatalogo &&
+            !buscando &&
+            sugerencias?.map((e) => (
+              <button
+                key={e.nombre}
+                type="button"
+                onMouseDown={() => elegir(e.nombre)}
+                className="block w-full px-3 py-2 text-left text-sm text-[var(--foreground)] hover:bg-[var(--surface-muted)]"
+              >
+                {e.nombre}
+                {e.departamento && (
+                  <span className="ml-1 text-xs text-slate-400">({e.departamento})</span>
+                )}
+              </button>
+            ))}
+          {!usandoCatalogo && sugerenciasFallback.length === 0 && (
+            <p className="px-3 py-2 text-xs text-slate-400">Sin coincidencias en el lote actual</p>
+          )}
+          {usandoCatalogo && !buscando && sugerencias?.length === 0 && (
+            <p className="px-3 py-2 text-xs text-slate-400">
+              Sin coincidencias en el catálogo del OECE
+            </p>
           )}
         </div>
       )}
