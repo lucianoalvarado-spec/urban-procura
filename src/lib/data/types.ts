@@ -117,6 +117,17 @@ export interface ExperienciaProveedor {
   fuente?: "manual" | "seace" | "rnp";
 }
 
+/** Archivo real adjuntado desde el navegador (sin backend/S3 todavía, así que el
+ * contenido se guarda como data URL en localStorage — funciona para archivos chicos,
+ * no para adjuntar libremente PDFs pesados). */
+export interface DocumentoAdjunto {
+  id: string;
+  nombre: string;
+  tipo: string; // MIME type
+  tamano: number; // bytes
+  dataUrl: string;
+}
+
 export interface PersonalClave {
   id: string;
   nombre: string;
@@ -124,6 +135,7 @@ export interface PersonalClave {
   colegiatura: string;
   cvAdjunto: boolean;
   certificados: string[];
+  documentos?: DocumentoAdjunto[];
 }
 
 export interface Equipo {
@@ -132,6 +144,7 @@ export interface Equipo {
   descripcion: string;
   cantidad: number;
   propio: boolean;
+  documentos?: DocumentoAdjunto[];
 }
 
 export interface DocumentoRepositorio {

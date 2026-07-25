@@ -2,10 +2,11 @@
 
 import { useState } from "react";
 import { useProveedor } from "@/lib/state/proveedor-context";
-import type { PersonalClave } from "@/lib/data/types";
+import type { DocumentoAdjunto, PersonalClave } from "@/lib/data/types";
 import { generarId } from "@/lib/id";
 import { Card, CardBody, CardHeader } from "@/components/ui/card";
 import { TextField, CheckboxField } from "@/components/perfil/field";
+import { AdjuntosField } from "@/components/perfil/adjuntos-field";
 
 const VACIO = {
   nombre: "",
@@ -13,6 +14,7 @@ const VACIO = {
   colegiatura: "",
   cvAdjunto: false,
   certificadosTexto: "",
+  documentos: [] as DocumentoAdjunto[],
 };
 
 export function PersonalClaveCard() {
@@ -24,6 +26,14 @@ export function PersonalClaveCard() {
     actualizarDatosEmpresa({ personalClave: proveedor.personalClave.filter((p) => p.id !== id) });
   };
 
+  const actualizarDocumentos = (id: string, documentos: DocumentoAdjunto[]) => {
+    actualizarDatosEmpresa({
+      personalClave: proveedor.personalClave.map((p) =>
+        p.id === id ? { ...p, documentos, cvAdjunto: p.cvAdjunto || documentos.length > 0 } : p
+      ),
+    });
+  };
+
   const agregar = () => {
     if (!form.nombre.trim() || !form.cargo.trim()) return;
     const nuevo: PersonalClave = {
@@ -31,11 +41,12 @@ export function PersonalClaveCard() {
       nombre: form.nombre,
       cargo: form.cargo,
       colegiatura: form.colegiatura,
-      cvAdjunto: form.cvAdjunto,
+      cvAdjunto: form.cvAdjunto || form.documentos.length > 0,
       certificados: form.certificadosTexto
         .split(",")
         .map((s) => s.trim())
         .filter(Boolean),
+      documentos: form.documentos,
     };
     actualizarDatosEmpresa({ personalClave: [...proveedor.personalClave, nuevo] });
     setForm(VACIO);
@@ -87,6 +98,11 @@ export function PersonalClaveCard() {
               label="CV adjunto"
               checked={form.cvAdjunto}
               onChange={(v) => setForm((f) => ({ ...f, cvAdjunto: v }))}
+            />
+            <AdjuntosField
+              label="CV y certificados (archivos)"
+              documentos={form.documentos}
+              onChange={(documentos) => setForm((f) => ({ ...f, documentos }))}
             />
             <div className="flex items-center gap-3">
               <button
@@ -147,6 +163,13 @@ export function PersonalClaveCard() {
                     ))}
                   </div>
                 )}
+                <div className="mt-3 border-t border-[var(--border)] pt-2">
+                  <AdjuntosField
+                    label="Archivos"
+                    documentos={persona.documentos ?? []}
+                    onChange={(documentos) => actualizarDocumentos(persona.id, documentos)}
+                  />
+                </div>
               </div>
             ))}
           </div>

@@ -1,21 +1,29 @@
 "use client";
 
-import { useState } from "react";
+import { Fragment, useState } from "react";
 import { useProveedor } from "@/lib/state/proveedor-context";
-import type { Equipo } from "@/lib/data/types";
+import type { DocumentoAdjunto, Equipo } from "@/lib/data/types";
 import { generarId } from "@/lib/id";
 import { Card, CardBody, CardHeader } from "@/components/ui/card";
 import { TextField, NumberField, CheckboxField } from "@/components/perfil/field";
+import { AdjuntosField } from "@/components/perfil/adjuntos-field";
 
-const VACIO = { tipo: "", descripcion: "", cantidad: 1, propio: true };
+const VACIO = { tipo: "", descripcion: "", cantidad: 1, propio: true, documentos: [] as DocumentoAdjunto[] };
 
 export function EquipamientoCard() {
   const { proveedor, actualizarDatosEmpresa } = useProveedor();
   const [agregando, setAgregando] = useState(false);
   const [form, setForm] = useState(VACIO);
+  const [expandido, setExpandido] = useState<string | null>(null);
 
   const eliminar = (id: string) => {
     actualizarDatosEmpresa({ equipamiento: proveedor.equipamiento.filter((e) => e.id !== id) });
+  };
+
+  const actualizarDocumentos = (id: string, documentos: DocumentoAdjunto[]) => {
+    actualizarDatosEmpresa({
+      equipamiento: proveedor.equipamiento.map((e) => (e.id === id ? { ...e, documentos } : e)),
+    });
   };
 
   const agregar = () => {
@@ -67,6 +75,11 @@ export function EquipamientoCard() {
               checked={form.propio}
               onChange={(v) => setForm((f) => ({ ...f, propio: v }))}
             />
+            <AdjuntosField
+              label="Documentos (tarjeta de propiedad, contrato de alquiler, etc.)"
+              documentos={form.documentos}
+              onChange={(documentos) => setForm((f) => ({ ...f, documentos }))}
+            />
             <div className="flex items-center gap-3">
               <button
                 type="button"
@@ -100,26 +113,51 @@ export function EquipamientoCard() {
                   <th className="pb-2 pr-3 font-medium">Descripción</th>
                   <th className="pb-2 pr-3 font-medium">Cantidad</th>
                   <th className="pb-2 pr-3 font-medium">Condición</th>
+                  <th className="pb-2 pr-3 font-medium">Documentos</th>
                   <th className="pb-2 font-medium" />
                 </tr>
               </thead>
               <tbody className="divide-y divide-[var(--border)]">
                 {proveedor.equipamiento.map((eq) => (
-                  <tr key={eq.id}>
-                    <td className="py-2 pr-3 text-slate-700">{eq.tipo}</td>
-                    <td className="py-2 pr-3 text-slate-600">{eq.descripcion}</td>
-                    <td className="py-2 pr-3 text-slate-600">{eq.cantidad}</td>
-                    <td className="py-2 pr-3 text-slate-600">{eq.propio ? "Propio" : "Alquilado"}</td>
-                    <td className="py-2 text-right">
-                      <button
-                        type="button"
-                        onClick={() => eliminar(eq.id)}
-                        className="text-xs font-medium text-slate-400 hover:text-red-600"
-                      >
-                        Eliminar
-                      </button>
-                    </td>
-                  </tr>
+                  <Fragment key={eq.id}>
+                    <tr>
+                      <td className="py-2 pr-3 text-slate-700">{eq.tipo}</td>
+                      <td className="py-2 pr-3 text-slate-600">{eq.descripcion}</td>
+                      <td className="py-2 pr-3 text-slate-600">{eq.cantidad}</td>
+                      <td className="py-2 pr-3 text-slate-600">{eq.propio ? "Propio" : "Alquilado"}</td>
+                      <td className="py-2 pr-3">
+                        <button
+                          type="button"
+                          onClick={() => setExpandido(expandido === eq.id ? null : eq.id)}
+                          className="text-xs font-medium text-[var(--brand-600)] hover:underline"
+                        >
+                          {(eq.documentos ?? []).length > 0
+                            ? `${eq.documentos!.length} archivo(s)`
+                            : "+ Adjuntar"}
+                        </button>
+                      </td>
+                      <td className="py-2 text-right">
+                        <button
+                          type="button"
+                          onClick={() => eliminar(eq.id)}
+                          className="text-xs font-medium text-slate-400 hover:text-red-600"
+                        >
+                          Eliminar
+                        </button>
+                      </td>
+                    </tr>
+                    {expandido === eq.id && (
+                      <tr>
+                        <td colSpan={6} className="bg-[var(--surface-muted)] px-3 py-3">
+                          <AdjuntosField
+                            label="Documentos"
+                            documentos={eq.documentos ?? []}
+                            onChange={(documentos) => actualizarDocumentos(eq.id, documentos)}
+                          />
+                        </td>
+                      </tr>
+                    )}
+                  </Fragment>
                 ))}
               </tbody>
             </table>

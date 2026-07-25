@@ -111,11 +111,3 @@ export async function getProveedor(): Promise<Proveedor> {
 export async function obtenerEstadisticas(): Promise<EstadisticasOece | null> {
   return obtenerEstadisticasLive();
 }
-
-export function listEntidades(): string[] {
-  return Array.from(new Set(procesosMock.map((p) => p.entidad))).sort();
-}
-
-export function listRegiones(): string[] {
-  return Array.from(new Set(procesosMock.map((p) => p.region))).sort();
-}

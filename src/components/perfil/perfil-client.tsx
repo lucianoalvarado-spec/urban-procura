@@ -1,9 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useProveedor } from "@/lib/state/proveedor-context";
 import type { PreferenciasProveedor, Region, Categoria, TipoProcedimiento } from "@/lib/data/types";
-import { CATEGORIAS, TIPOS_PROCEDIMIENTO } from "@/lib/data/constants";
+import { CATEGORIAS, REGIONES, TIPOS_PROCEDIMIENTO } from "@/lib/data/constants";
 import { Card, CardBody, CardHeader } from "@/components/ui/card";
 import { PlanBadge } from "@/components/ui/badge";
 import { DatosGeneralesCard } from "@/components/perfil/datos-generales-card";
@@ -12,14 +12,26 @@ import { ExperienciaCard } from "@/components/perfil/experiencia-card";
 import { PersonalClaveCard } from "@/components/perfil/personal-clave-card";
 import { EquipamientoCard } from "@/components/perfil/equipamiento-card";
 import { DocumentosCard } from "@/components/perfil/documentos-card";
+import type { EntidadesBuscarResultado } from "@/app/api/entidades/buscar/route";
 
-export function PerfilClient({
-  entidadesDisponibles,
-  regionesDisponibles,
-}: {
-  entidadesDisponibles: string[];
-  regionesDisponibles: string[];
-}) {
+const PALABRAS_CLAVE_SUGERIDAS = [
+  "saneamiento",
+  "pistas y veredas",
+  "drenaje pluvial",
+  "puente",
+  "expediente técnico",
+  "supervisión de obra",
+  "mantenimiento vial",
+  "agua potable",
+  "alcantarillado",
+  "electrificación rural",
+  "institución educativa",
+  "establecimiento de salud",
+  "carretera",
+  "defensa ribereña",
+];
+
+export function PerfilClient() {
   const { proveedor } = useProveedor();
 
   return (
@@ -43,18 +55,12 @@ export function PerfilClient({
       <EquipamientoCard />
       <DocumentosCard />
 
-      <PreferenciasForm entidadesDisponibles={entidadesDisponibles} regionesDisponibles={regionesDisponibles} />
+      <PreferenciasForm />
     </div>
   );
 }
 
-function PreferenciasForm({
-  entidadesDisponibles,
-  regionesDisponibles,
-}: {
-  entidadesDisponibles: string[];
-  regionesDisponibles: string[];
-}) {
+function PreferenciasForm() {
   const { proveedor, updatePreferencias, resetPreferencias } = useProveedor();
   const [form, setForm] = useState<PreferenciasProveedor>(proveedor.preferencias);
   const [guardado, setGuardado] = useState(false);
@@ -99,42 +105,18 @@ function PreferenciasForm({
 
         <div>
           <p className="mb-2 text-xs font-medium text-slate-500">Regiones objetivo</p>
-          <div className="flex flex-wrap gap-2">
-            {regionesDisponibles.map((region) => (
-              <Chip
-                key={region}
-                active={form.regionesObjetivo.includes(region as Region)}
-                onClick={() =>
-                  setForm((f) => ({
-                    ...f,
-                    regionesObjetivo: toggle<Region>(f.regionesObjetivo, region as Region),
-                  }))
-                }
-              >
-                {region}
-              </Chip>
-            ))}
-          </div>
+          <RegionesPicker
+            seleccionadas={form.regionesObjetivo}
+            onChange={(regionesObjetivo) => setForm((f) => ({ ...f, regionesObjetivo }))}
+          />
         </div>
 
         <div>
           <p className="mb-2 text-xs font-medium text-slate-500">Entidades objetivo</p>
-          <div className="flex max-h-40 flex-wrap gap-2 overflow-y-auto">
-            {entidadesDisponibles.map((entidad) => (
-              <Chip
-                key={entidad}
-                active={form.entidadesObjetivo.includes(entidad)}
-                onClick={() =>
-                  setForm((f) => ({
-                    ...f,
-                    entidadesObjetivo: toggle<string>(f.entidadesObjetivo, entidad),
-                  }))
-                }
-              >
-                {entidad}
-              </Chip>
-            ))}
-          </div>
+          <EntidadesPicker
+            seleccionadas={form.entidadesObjetivo}
+            onChange={(entidadesObjetivo) => setForm((f) => ({ ...f, entidadesObjetivo }))}
+          />
         </div>
 
         <div>
@@ -197,6 +179,20 @@ function PreferenciasForm({
             className="rounded-lg border border-[var(--border)] px-2.5 py-2 text-sm text-[var(--foreground)] focus:border-[var(--brand-500)] focus:outline-none"
           />
         </label>
+        <div className="-mt-3 flex flex-wrap gap-1.5">
+          {PALABRAS_CLAVE_SUGERIDAS.filter((p) => !form.palabrasClave.includes(p)).map((p) => (
+            <button
+              key={p}
+              type="button"
+              onClick={() =>
+                setForm((f) => ({ ...f, palabrasClave: [...f.palabrasClave, p] }))
+              }
+              className="rounded-full border border-dashed border-[var(--border)] px-2.5 py-1 text-[11px] text-slate-500 hover:border-[var(--brand-500)] hover:text-[var(--brand-700)]"
+            >
+              + {p}
+            </button>
+          ))}
+        </div>
 
         <div className="flex items-center gap-3 border-t border-[var(--border)] pt-4">
           <button
@@ -243,5 +239,153 @@ function Chip({
     >
       {children}
     </button>
+  );
+}
+
+function RegionesPicker({
+  seleccionadas,
+  onChange,
+}: {
+  seleccionadas: Region[];
+  onChange: (regiones: Region[]) => void;
+}) {
+  const disponibles = REGIONES.filter((r) => !seleccionadas.includes(r));
+
+  return (
+    <div className="flex flex-col gap-2">
+      <div className="flex flex-wrap gap-2">
+        {seleccionadas.length === 0 && (
+          <p className="text-xs text-slate-400">Ninguna región seleccionada.</p>
+        )}
+        {seleccionadas.map((region) => (
+          <Chip
+            key={region}
+            active
+            onClick={() => onChange(seleccionadas.filter((r) => r !== region))}
+          >
+            {region} ✕
+          </Chip>
+        ))}
+      </div>
+      {disponibles.length > 0 && (
+        <select
+          value=""
+          onChange={(e) => {
+            if (e.target.value) onChange([...seleccionadas, e.target.value as Region]);
+          }}
+          className="w-fit rounded-lg border border-[var(--border)] px-2.5 py-1.5 text-xs text-slate-600 focus:border-[var(--brand-500)] focus:outline-none"
+        >
+          <option value="">+ Agregar región</option>
+          {disponibles.map((region) => (
+            <option key={region} value={region}>
+              {region}
+            </option>
+          ))}
+        </select>
+      )}
+    </div>
+  );
+}
+
+// A diferencia de Región (lista fija de 25), Entidad busca en vivo contra el catálogo
+// completo de ~3,316 entidades del OECE (mismo endpoint que el combobox de Entidad del
+// Explorador) — una lista curada de mock no alcanzaba a cubrir ministerios, programas
+// adscritos ni la mayoría de municipalidades.
+function EntidadesPicker({
+  seleccionadas,
+  onChange,
+}: {
+  seleccionadas: string[];
+  onChange: (entidades: string[]) => void;
+}) {
+  const [texto, setTexto] = useState("");
+  const [sugerencias, setSugerencias] = useState<{ nombre: string; departamento: string | null }[]>([]);
+  const [buscando, setBuscando] = useState(false);
+  const [abierto, setAbierto] = useState(false);
+
+  useEffect(() => {
+    const q = texto.trim();
+    if (q.length < 2) {
+      setSugerencias([]);
+      return;
+    }
+    let cancelado = false;
+    setBuscando(true);
+    const timeout = setTimeout(() => {
+      fetch(`/api/entidades/buscar?q=${encodeURIComponent(q)}`)
+        .then((r) => r.json())
+        .then((data: EntidadesBuscarResultado) => {
+          if (cancelado) return;
+          setSugerencias(data.disponible ? data.entidades : []);
+        })
+        .catch(() => {
+          if (!cancelado) setSugerencias([]);
+        })
+        .finally(() => {
+          if (!cancelado) setBuscando(false);
+        });
+    }, 350);
+    return () => {
+      cancelado = true;
+      clearTimeout(timeout);
+      setBuscando(false);
+    };
+  }, [texto]);
+
+  const agregar = (nombre: string) => {
+    if (!seleccionadas.includes(nombre)) onChange([...seleccionadas, nombre]);
+    setTexto("");
+    setSugerencias([]);
+    setAbierto(false);
+  };
+
+  return (
+    <div className="flex flex-col gap-2">
+      <div className="flex max-h-40 flex-wrap gap-2 overflow-y-auto">
+        {seleccionadas.length === 0 && (
+          <p className="text-xs text-slate-400">Ninguna entidad seleccionada.</p>
+        )}
+        {seleccionadas.map((entidad) => (
+          <Chip
+            key={entidad}
+            active
+            onClick={() => onChange(seleccionadas.filter((e) => e !== entidad))}
+          >
+            {entidad} ✕
+          </Chip>
+        ))}
+      </div>
+      <div className="relative max-w-md">
+        <input
+          type="text"
+          value={texto}
+          onFocus={() => setAbierto(true)}
+          onChange={(e) => setTexto(e.target.value)}
+          onBlur={() => setTimeout(() => setAbierto(false), 150)}
+          placeholder="Buscar entidad por nombre — ej. municipalidad, ministerio"
+          className="w-full rounded-lg border border-[var(--border)] px-2.5 py-2 text-xs text-[var(--foreground)] focus:border-[var(--brand-500)] focus:outline-none"
+        />
+        {abierto && texto.trim().length >= 2 && (
+          <div className="absolute top-full left-0 z-10 mt-1 max-h-56 w-full min-w-[320px] overflow-y-auto rounded-lg border border-[var(--border)] bg-[var(--surface)] shadow-lg">
+            {buscando && <p className="px-3 py-2 text-xs text-slate-400">Buscando…</p>}
+            {!buscando && sugerencias.length === 0 && (
+              <p className="px-3 py-2 text-xs text-slate-400">Sin coincidencias</p>
+            )}
+            {!buscando &&
+              sugerencias.map((e) => (
+                <button
+                  key={e.nombre}
+                  type="button"
+                  onMouseDown={() => agregar(e.nombre)}
+                  className="block w-full px-3 py-2 text-left text-xs text-[var(--foreground)] hover:bg-[var(--surface-muted)]"
+                >
+                  {e.nombre}
+                  {e.departamento && <span className="ml-1 text-slate-400">({e.departamento})</span>}
+                </button>
+              ))}
+          </div>
+        )}
+      </div>
+    </div>
   );
 }
