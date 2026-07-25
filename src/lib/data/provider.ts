@@ -1,4 +1,4 @@
-import type { Proceso, Proveedor } from "@/lib/data/types";
+import type { Proceso, Proveedor, Region } from "@/lib/data/types";
 import { procesosMock } from "@/lib/data/mock/procesos";
 import { proveedorMock } from "@/lib/data/mock/proveedor";
 import {
@@ -6,6 +6,7 @@ import {
   esIdProcesoLive,
   obtenerEstadisticasLive,
   obtenerProcesoLive,
+  obtenerProcesosPorRegionLive,
   type EstadisticasOece,
 } from "@/lib/data/live/oece";
 
@@ -110,4 +111,11 @@ export async function getProveedor(): Promise<Proveedor> {
 // inventar un número).
 export async function obtenerEstadisticas(): Promise<EstadisticasOece | null> {
   return obtenerEstadisticasLive();
+}
+
+// Igual que obtenerEstadisticas: sin fallback mock, son cifras institucionales reales
+// (histórico de todos los años, agregado por región) — si la fuente no responde, el
+// mapa del Dashboard debe indicarlo, no inventar números por región.
+export async function obtenerProcesosPorRegion(): Promise<Partial<Record<Region, number>> | null> {
+  return obtenerProcesosPorRegionLive();
 }

@@ -2,7 +2,7 @@
 
 import { useMemo } from "react";
 import Link from "next/link";
-import type { Proceso } from "@/lib/data/types";
+import type { Proceso, Region } from "@/lib/data/types";
 import { useProveedor } from "@/lib/state/proveedor-context";
 import { useCrm } from "@/lib/state/crm-context";
 import { computeMatch } from "@/lib/data/matching";
@@ -11,11 +11,18 @@ import { Card, CardBody, CardHeader } from "@/components/ui/card";
 import { MatchBadge } from "@/components/ui/badge";
 import { UpgradeNotice } from "@/components/plan/upgrade-notice";
 import { cumplePlan } from "@/lib/plan";
+import { PeruMapCard } from "@/components/dashboard/peru-map-card";
 
 const ESTADOS_ACTIVOS = new Set(["Convocado", "En proceso de selección"]);
 const LIMITE_PLAN_FREE = 2;
 
-export function DashboardClient({ procesos }: { procesos: Proceso[] }) {
+export function DashboardClient({
+  procesos,
+  procesosPorRegion,
+}: {
+  procesos: Proceso[];
+  procesosPorRegion: Partial<Record<Region, number>> | null;
+}) {
   const { proveedor } = useProveedor();
   const { estados } = useCrm();
   const puedeMatchCrm = cumplePlan(proveedor.plan, "profesional");
@@ -95,6 +102,8 @@ export function DashboardClient({ procesos }: { procesos: Proceso[] }) {
           hint={puedeMatchCrm ? "En seguimiento activo" : "Plan Profesional+"}
         />
       </div>
+
+      <PeruMapCard datos={procesosPorRegion} />
 
       {puedeMatchCrm ? (
         <Card>
