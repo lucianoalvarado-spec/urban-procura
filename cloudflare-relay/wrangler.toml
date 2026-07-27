@@ -2,5 +2,14 @@ name = "urban-procura-oece-relay"
 main = "src/index.js"
 compatibility_date = "2026-01-01"
 
+# Sin esto, el Worker ejecuta en el PoP de Cloudflare más cercano a quien lo llama
+# (Vercel, en EEUU/Brasil) — y ese PoP parece estar tan bloqueado por el WAF del OECE
+# como la propia red de Vercel (confirmado: la misma llamada funciona si la hace esta
+# máquina en Perú, pero falla si la hace Vercel). "smart" mueve la ejecución cerca del
+# servidor de origen al que el Worker le pega (OECE, en Perú), sin importar de dónde
+# venga la petición original.
+[placement]
+mode = "smart"
+
 # El token compartido (x-relay-token) NO va acá — se define como secret:
 #   npx wrangler secret put RELAY_TOKEN
