@@ -3,6 +3,10 @@
 // conectarse al OECE (timeout, DNS, conexión rechazada, 403 del WAF, etc.), porque
 // esta sesión de Claude Code no tiene acceso a los Function/Runtime Logs de Vercel.
 // Ver la nota en CLAUDE.md ("Despliegue") — borrar esta ruta una vez diagnosticado.
+// Prueba: el runtime "edge" de Vercel corre sobre una red distinta a las funciones
+// serverless normales (Node/AWS Lambda, región iad1 confirmada por este mismo endpoint)
+// — si el bloqueo del OECE es por rango de IP de AWS, edge podría no estar bloqueado.
+export const runtime = "edge";
 export const preferredRegion = "gru1";
 export const maxDuration = 30;
 
