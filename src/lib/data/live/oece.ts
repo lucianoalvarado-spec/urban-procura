@@ -14,7 +14,24 @@ import { REGIONES } from "@/lib/data/constants";
 //   (departamento/provincia) y los documentos reales (bases, buena pro, contrato). Por eso
 //   la Ficha del proceso pide SIEMPRE el detalle, nunca reutiliza el resumen de la lista.
 
-const BASE_URL = "https://contratacionesabiertas.oece.gob.pe/api/v1";
+// El OECE bloquea el tráfico de la red de Vercel a nivel de WAF (403 en <600ms,
+// confirmado con un endpoint de diagnóstico temporal — ver CLAUDE.md, sección
+// "Despliegue"). Ni timeout/región/runtime/User-Agent lo resuelven: hace falta pedir
+// estos endpoints desde otra red. Si `OECE_RELAY_URL` está configurada (un Worker de
+// Cloudflare que hace de proxy transparente, ver cloudflare-relay/), se usa esa base
+// en vez de pegarle directo al OECE — así producción usa el relay y el desarrollo
+// local (donde el bloqueo no aplica) sigue funcionando sin necesitarlo.
+const OECE_RELAY_URL = process.env.OECE_RELAY_URL;
+const OECE_RELAY_TOKEN = process.env.OECE_RELAY_TOKEN;
+const BASE_URL = OECE_RELAY_URL
+  ? `${OECE_RELAY_URL.replace(/\/$/, "")}/proxy/v1`
+  : "https://contratacionesabiertas.oece.gob.pe/api/v1";
+
+function oeceHeaders(): HeadersInit {
+  const headers: Record<string, string> = { Accept: "application/json" };
+  if (OECE_RELAY_URL && OECE_RELAY_TOKEN) headers["x-relay-token"] = OECE_RELAY_TOKEN;
+  return headers;
+}
 
 interface OceValor {
   amount?: number;
@@ -350,7 +367,7 @@ export async function buscarProcesosLive(params: BusquedaLiveParams = {}): Promi
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 15000);
     const res = await fetch(url.toString(), {
-      headers: { Accept: "application/json" },
+      headers: oeceHeaders(),
       signal: controller.signal,
       cache: "no-store",
     });
@@ -377,7 +394,7 @@ export async function obtenerProcesoLive(ocid: string): Promise<Proceso | null> 
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 15000);
     const res = await fetch(`${BASE_URL}/record/${encodeURIComponent(ocid)}`, {
-      headers: { Accept: "application/json" },
+      headers: oeceHeaders(),
       signal: controller.signal,
       cache: "no-store",
     });
@@ -506,7 +523,7 @@ export async function obtenerEstadisticasLive(): Promise<EstadisticasOece | null
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 15000);
     const res = await fetch(`${BASE_URL}/indexCountData?format=json`, {
-      headers: { Accept: "application/json" },
+      headers: oeceHeaders(),
       signal: controller.signal,
       cache: "no-store",
     });
@@ -560,7 +577,7 @@ function fetchBuyersPage(page: number): Promise<OceBuyersResponse | null> {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 15000);
   return fetch(`${BASE_URL}/buyers?page=${page}&paginateBy=1000&format=json`, {
-    headers: { Accept: "application/json" },
+    headers: oeceHeaders(),
     signal: controller.signal,
     next: { revalidate: 21600 },
   })

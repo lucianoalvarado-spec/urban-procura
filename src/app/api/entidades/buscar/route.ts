@@ -19,7 +19,21 @@ import { NextRequest } from "next/server";
 export const preferredRegion = "gru1";
 export const maxDuration = 30;
 
-const BASE = "https://contratacionesabiertas.oece.gob.pe/api/v1";
+// Ver lib/data/live/oece.ts para el porqué del relay: el OECE bloquea el tráfico
+// de la red de Vercel a nivel de WAF (confirmado con diagnóstico directo), así que
+// en producción esto pasa por un Worker de Cloudflare (cloudflare-relay/) en vez de
+// pegarle directo — controlado por OECE_RELAY_URL/OECE_RELAY_TOKEN.
+const OECE_RELAY_URL = process.env.OECE_RELAY_URL;
+const OECE_RELAY_TOKEN = process.env.OECE_RELAY_TOKEN;
+const BASE = OECE_RELAY_URL
+  ? `${OECE_RELAY_URL.replace(/\/$/, "")}/proxy/v1`
+  : "https://contratacionesabiertas.oece.gob.pe/api/v1";
+
+function oeceHeaders(): HeadersInit {
+  const headers: Record<string, string> = { Accept: "application/json" };
+  if (OECE_RELAY_URL && OECE_RELAY_TOKEN) headers["x-relay-token"] = OECE_RELAY_TOKEN;
+  return headers;
+}
 
 interface OceBuyerParty {
   name?: string;
@@ -66,7 +80,7 @@ export async function GET(request: NextRequest) {
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 15000);
     const res = await fetch(url.toString(), {
-      headers: { Accept: "application/json" },
+      headers: oeceHeaders(),
       signal: controller.signal,
       cache: "no-store",
     });

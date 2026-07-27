@@ -1,0 +1,6 @@
+name = "urban-procura-oece-relay"
+main = "src/index.js"
+compatibility_date = "2026-01-01"
+
+# El token compartido (x-relay-token) NO va acá — se define como secret:
+#   npx wrangler secret put RELAY_TOKEN
