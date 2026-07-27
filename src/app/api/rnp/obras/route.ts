@@ -23,6 +23,9 @@ import type { Categoria } from "@/lib/data/types";
 // Cada documento trae dos URLs (`url` y `urlEstampa`); `url` responde 404, solo
 // `urlEstampa` (el PDF con estampado/sello oficial) descarga de verdad — usar esa.
 
+export const preferredRegion = "gru1";
+export const maxDuration = 30;
+
 const BASE = "https://eap.oece.gob.pe/expprov-bus/1.0";
 const LIMITE_OBRAS = 12;
 

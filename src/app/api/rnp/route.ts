@@ -10,6 +10,9 @@ import { NextRequest } from "next/server";
 // - robots.txt de apps.osce.gob.pe / eap.oece.gob.pe solo bloquea /cuaderno-obra/, no aplica aquí.
 // - `proveedorT01` es `null` cuando el RUC no está en el RNP (no es un error, es "no encontrado").
 
+export const preferredRegion = "gru1";
+export const maxDuration = 30;
+
 const OSCE_FICHA_URL = "https://eap.oece.gob.pe/perfilprov-bus/1.0/ficha";
 
 interface OsceEspecialidad {

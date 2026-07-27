@@ -16,6 +16,9 @@ import type { Categoria } from "@/lib/data/types";
 // vive en su propio proxy: src/app/api/rnp/obras/route.ts (ver comentario ahí para el
 // contrato de parámetros que faltaba en el primer intento).
 
+export const preferredRegion = "gru1";
+export const maxDuration = 30;
+
 const BASE = "https://eap.oece.gob.pe/perfilprov-bus/1.0";
 const LIMITE_CONTRATOS = 12;
 

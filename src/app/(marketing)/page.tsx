@@ -2,6 +2,9 @@ import Link from "next/link";
 import { PLANES } from "@/lib/plan";
 import { obtenerEstadisticas } from "@/lib/data/provider";
 
+export const preferredRegion = "gru1";
+export const maxDuration = 30;
+
 const FEATURES = [
   {
     titulo: "Explorador inteligente",

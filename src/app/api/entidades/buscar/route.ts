@@ -14,6 +14,11 @@ import { NextRequest } from "next/server";
 // Otros nombres de param que parecen plausibles (`search`, `q`, `name`, `nombre`) NO
 // filtran nada — devuelven el total sin filtrar (3316), a diferencia de `buyer` que sí.
 
+// Igual que /api/procesos/buscar: función serverless propia, necesita su propia región
+// y presupuesto de tiempo — no hereda la config de la página que la llama.
+export const preferredRegion = "gru1";
+export const maxDuration = 30;
+
 const BASE = "https://contratacionesabiertas.oece.gob.pe/api/v1";
 
 interface OceBuyerParty {
@@ -59,7 +64,7 @@ export async function GET(request: NextRequest) {
     url.searchParams.set("format", "json");
 
     const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 8000);
+    const timeout = setTimeout(() => controller.abort(), 15000);
     const res = await fetch(url.toString(), {
       headers: { Accept: "application/json" },
       signal: controller.signal,

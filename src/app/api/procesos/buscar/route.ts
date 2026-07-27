@@ -17,6 +17,13 @@ import type { Categoria } from "@/lib/data/types";
 // proceso (ej. `search=PROVIAS` devuelve resultados de PROVIAS NACIONAL con miles de
 // coincidencias totales).
 
+// gru1 (São Paulo) + maxDuration extendido: esta ruta corre como su propia función
+// serverless (llamada por fetch del cliente), no hereda la config de explorador/page.tsx —
+// sin esto corría en la región default de Vercel y podía quedarse sin tiempo antes de
+// que el fetch de 15s a buscarProcesosLive terminara.
+export const preferredRegion = "gru1";
+export const maxDuration = 30;
+
 const CATEGORIAS_VALIDAS: Categoria[] = ["Obra", "Bienes", "Servicios", "Consultoría de Obras"];
 
 export async function GET(request: NextRequest) {

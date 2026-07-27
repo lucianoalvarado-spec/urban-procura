@@ -3,6 +3,7 @@ import { getProceso } from "@/lib/data/provider";
 import { FichaClient } from "@/components/ficha/ficha-client";
 
 export const preferredRegion = "gru1";
+export const maxDuration = 30;
 
 export default async function FichaProcesoPage({
   params,

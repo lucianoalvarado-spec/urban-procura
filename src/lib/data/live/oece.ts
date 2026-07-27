@@ -397,7 +397,7 @@ export interface EstadisticasOece {
 export async function obtenerEstadisticasLive(): Promise<EstadisticasOece | null> {
   try {
     const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 8000);
+    const timeout = setTimeout(() => controller.abort(), 15000);
     const res = await fetch(`${BASE_URL}/indexCountData?format=json`, {
       headers: { Accept: "application/json" },
       signal: controller.signal,
@@ -449,23 +449,26 @@ interface OceBuyersResponse {
 // Es una llamada pesada para pedirla en cada carga del Dashboard, así que se cachea
 // (revalidate) en vez de no-store como el resto de este archivo — estos totales no
 // cambian de un minuto a otro.
+function fetchBuyersPage(page: number): Promise<OceBuyersResponse | null> {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 15000);
+  return fetch(`${BASE_URL}/buyers?page=${page}&paginateBy=1000&format=json`, {
+    headers: { Accept: "application/json" },
+    signal: controller.signal,
+    next: { revalidate: 21600 },
+  })
+    .then((r) => (r.ok ? (r.json() as Promise<OceBuyersResponse>) : null))
+    .finally(() => clearTimeout(timeout));
+}
+
 export async function obtenerProcesosPorRegionLive(): Promise<Partial<Record<Region, number>> | null> {
   try {
-    const primera = await fetch(`${BASE_URL}/buyers?page=1&paginateBy=1000&format=json`, {
-      headers: { Accept: "application/json" },
-      next: { revalidate: 21600 },
-    });
-    if (!primera.ok) return null;
-    const dataPrimera = (await primera.json()) as OceBuyersResponse;
+    const dataPrimera = await fetchBuyersPage(1);
+    if (!dataPrimera) return null;
     const totalPaginas = dataPrimera.pagination?.num_pages ?? 1;
 
     const resto = await Promise.all(
-      Array.from({ length: totalPaginas - 1 }, (_, i) =>
-        fetch(`${BASE_URL}/buyers?page=${i + 2}&paginateBy=1000&format=json`, {
-          headers: { Accept: "application/json" },
-          next: { revalidate: 21600 },
-        }).then((r) => (r.ok ? (r.json() as Promise<OceBuyersResponse>) : null))
-      )
+      Array.from({ length: totalPaginas - 1 }, (_, i) => fetchBuyersPage(i + 2))
     );
 
     const acumulado: Partial<Record<Region, number>> = {};
