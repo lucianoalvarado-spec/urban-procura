@@ -1,12 +1,8 @@
-import { Proximamente } from "@/components/proximamente/proximamente";
+import { HistorialEntidadClient } from "@/components/historial-entidad/historial-entidad-client";
+
+export const preferredRegion = "gru1";
+export const maxDuration = 30;
 
 export default function HistorialEntidadPage() {
-  return (
-    <Proximamente
-      titulo="Historial de la entidad"
-      plan="profesional"
-      pregunta="¿Cómo compra esta entidad normalmente?"
-      descripcion="Historial de adjudicaciones por entidad: empresa ganadora, monto, objeto y tipo de procedimiento, para entender patrones de compra antes de decidir si participar."
-    />
-  );
+  return <HistorialEntidadClient />;
 }

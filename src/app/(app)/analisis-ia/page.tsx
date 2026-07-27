@@ -1,12 +1,11 @@
-import { Proximamente } from "@/components/proximamente/proximamente";
+import { listProcesos } from "@/lib/data/provider";
+import { AnalisisIaClient } from "@/components/analisis-ia/analisis-ia-client";
 
-export default function AnalisisIaPage() {
-  return (
-    <Proximamente
-      titulo="Análisis de bases con IA"
-      plan="premium"
-      pregunta="¿Puedo participar y qué me falta?"
-      descripcion="Lectura automática de bases y expedientes técnicos para generar un resumen ejecutivo, los requisitos detectados, especialistas y garantías exigidas, y responder preguntas puntuales sobre un proceso específico."
-    />
-  );
+export const preferredRegion = "gru1";
+export const maxDuration = 30;
+
+export default async function AnalisisIaPage() {
+  const procesos = await listProcesos();
+
+  return <AnalisisIaClient procesosSugeridos={procesos.slice(0, 6)} />;
 }

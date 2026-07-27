@@ -1,12 +1,11 @@
-import { Proximamente } from "@/components/proximamente/proximamente";
+import { listProcesos } from "@/lib/data/provider";
+import { AlertasClient } from "@/components/alertas/alertas-client";
 
-export default function AlertasPage() {
-  return (
-    <Proximamente
-      titulo="Alertas"
-      plan="profesional"
-      pregunta="¿Qué cambió que debería saber ahora mismo?"
-      descripcion="Alertas configurables por rubro, región o entidad, con avisos de vencimientos próximos y procesos nuevos que calzan con tu perfil, sin tener que entrar a revisar el explorador todos los días."
-    />
-  );
+export const preferredRegion = "gru1";
+export const maxDuration = 30;
+
+export default async function AlertasPage() {
+  const procesos = await listProcesos();
+
+  return <AlertasClient procesos={procesos} />;
 }

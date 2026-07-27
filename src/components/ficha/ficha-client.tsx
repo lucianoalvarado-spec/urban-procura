@@ -9,6 +9,7 @@ import { Card, CardBody, CardHeader } from "@/components/ui/card";
 import { MatchBadge } from "@/components/ui/badge";
 import { EstadoCrmSelect } from "@/components/crm/estado-crm-select";
 import { UpgradeNotice, LockedInline } from "@/components/plan/upgrade-notice";
+import { AnalisisBasesCard } from "@/components/analisis-ia/analisis-bases-card";
 import { cumplePlan } from "@/lib/plan";
 
 export function FichaClient({ proceso }: { proceso: Proceso }) {
@@ -244,6 +245,8 @@ export function FichaClient({ proceso }: { proceso: Proceso }) {
           </CardBody>
         </Card>
       )}
+
+      <AnalisisBasesCard proceso={proceso} />
     </div>
   );
 }

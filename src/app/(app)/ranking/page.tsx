@@ -1,12 +1,11 @@
-import { Proximamente } from "@/components/proximamente/proximamente";
+import { obtenerRankingCompetidores } from "@/lib/data/provider";
+import { RankingClient } from "@/components/ranking/ranking-client";
 
-export default function RankingPage() {
-  return (
-    <Proximamente
-      titulo="Ranking de competidores"
-      plan="profesional"
-      pregunta="¿Quién me está ganando y en qué categorías?"
-      descripcion="Ranking de empresas ganadoras por categoría (hospitales, colegios, carreteras, saneamiento, puentes, etc.) para identificar competidores reales en tu segmento, no solo un ranking general del mercado."
-    />
-  );
+export const preferredRegion = "gru1";
+export const maxDuration = 30;
+
+export default async function RankingPage() {
+  const inicial = await obtenerRankingCompetidores();
+
+  return <RankingClient inicial={inicial} />;
 }

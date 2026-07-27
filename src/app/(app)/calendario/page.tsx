@@ -1,12 +1,11 @@
-import { Proximamente } from "@/components/proximamente/proximamente";
+import { listProcesos } from "@/lib/data/provider";
+import { CalendarioClient } from "@/components/calendario/calendario-client";
 
-export default function CalendarioPage() {
-  return (
-    <Proximamente
-      titulo="Calendario de plazos"
-      plan="profesional"
-      pregunta="¿Qué vence esta semana y el próximo mes?"
-      descripcion="Vista de calendario con todos los hitos de tus procesos en seguimiento: registro de participantes, consultas, presentación de ofertas y buena pro, para planificar la carga de trabajo del equipo."
-    />
-  );
+export const preferredRegion = "gru1";
+export const maxDuration = 30;
+
+export default async function CalendarioPage() {
+  const procesos = await listProcesos();
+
+  return <CalendarioClient procesos={procesos} />;
 }

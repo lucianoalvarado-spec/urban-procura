@@ -1,12 +1,11 @@
-import { Proximamente } from "@/components/proximamente/proximamente";
+import { listProcesos } from "@/lib/data/provider";
+import { AutomatizacionClient } from "@/components/automatizacion/automatizacion-client";
 
-export default function AutomatizacionPage() {
-  return (
-    <Proximamente
-      titulo="Generación de ofertas"
-      plan="premium"
-      pregunta="¿Cómo armo la oferta más rápido?"
-      descripcion="Descarga de bases, identificación de anexos, autocompletado de formularios reutilizando los documentos de tu repositorio, y generación de la oferta en Word/PDF. Es roadmap explícito, no parte del MVP: la arquitectura de perfil y documentos ya está pensada para habilitarlo más adelante."
-    />
-  );
+export const preferredRegion = "gru1";
+export const maxDuration = 30;
+
+export default async function AutomatizacionPage() {
+  const procesos = await listProcesos();
+
+  return <AutomatizacionClient procesosSugeridos={procesos.slice(0, 6)} />;
 }

@@ -98,6 +98,14 @@ interface OceParte {
   address?: OceDireccion;
 }
 
+interface OceAward {
+  date?: string;
+  status?: string;
+  value?: OceValor;
+  suppliers?: OceEntidad[];
+  documents?: OceDocumento[];
+}
+
 interface OceReleaseDetalle {
   ocid?: string;
   id?: string;
@@ -106,7 +114,7 @@ interface OceReleaseDetalle {
   buyer?: OceEntidad;
   tender?: OceTenderDetalle;
   parties?: OceParte[];
-  awards?: { date?: string; documents?: OceDocumento[] }[];
+  awards?: OceAward[];
   contracts?: { dateSigned?: string; documents?: OceDocumento[] }[];
 }
 
@@ -261,6 +269,21 @@ function releaseADetalleProceso(release: OceReleaseDetalle): Proceso | null {
       .map((c) => ({ etapa: "Firma de contrato", fecha: c.dateSigned as string })),
   ].filter((e): e is { etapa: string; fecha: string } => Boolean(e));
 
+  // Cuando ya hay buena pro, el award trae el/los proveedor(es) ganador(es) y el monto
+  // adjudicado — si hay más de un award (consorcios, ítems separados) tomamos el de
+  // mayor valor como el principal, que es lo que se muestra en Ranking/Historial.
+  const awardConGanador = (release.awards ?? [])
+    .filter((a) => (a.suppliers ?? []).length > 0)
+    .sort((a, b) => (b.value?.amount ?? 0) - (a.value?.amount ?? 0))[0];
+  const adjudicacion = awardConGanador
+    ? {
+        proveedorGanador:
+          (awardConGanador.suppliers ?? []).map((s) => s.name).filter(Boolean).join(" / ") ||
+          "Proveedor no especificado",
+        montoAdjudicado: awardConGanador.value?.amount ?? 0,
+      }
+    : undefined;
+
   return {
     id: ocid,
     entidad: release.buyer?.name || tender.procuringEntity?.name || "Entidad no especificada",
@@ -290,6 +313,7 @@ function releaseADetalleProceso(release: OceReleaseDetalle): Proceso | null {
     riesgos: [],
     fuente: "live",
     fuenteUrl: `https://contratacionesabiertas.oece.gob.pe/proceso/${ocid}`,
+    adjudicacion,
   };
 }
 
@@ -365,6 +389,89 @@ export async function obtenerProcesoLive(ocid: string): Promise<Proceso | null> 
     if (!release) return null;
 
     return releaseADetalleProceso(release);
+  } catch {
+    return null;
+  }
+}
+
+export interface AdjudicacionResumen {
+  procesoId: string;
+  entidad: string;
+  objeto: string;
+  categoria: Categoria;
+  tipoProcedimiento: string;
+  fecha: string;
+  proveedorGanador: string;
+  montoAdjudicado: number;
+  fuenteUrl: string;
+}
+
+// Ni Ranking de competidores ni Historial de la entidad tienen un endpoint propio en el
+// OECE — se arman pidiendo un lote de candidatos a /search y trayendo el detalle
+// (/record/{ocid}) de cada uno, porque solo el detalle expone al proveedor ganador
+// (awards[].suppliers). El resumen de /search nunca marca estado "Buena pro otorgada"
+// (no trae `tag`, ver resumenAProceso), así que no hay forma de filtrar candidatos de
+// antemano — se descartan después de pedir el detalle, quedándonos solo con los que sí
+// tienen `adjudicacion`. Acotado a un lote chico porque cada detalle es su propio fetch.
+const LIMITE_CANDIDATOS_ADJUDICACION = 20;
+
+async function detallarAdjudicaciones(candidatos: Proceso[]): Promise<AdjudicacionResumen[]> {
+  const detalles = await Promise.allSettled(candidatos.map((p) => obtenerProcesoLive(p.id)));
+  const resultados: AdjudicacionResumen[] = [];
+  for (const settled of detalles) {
+    if (settled.status !== "fulfilled" || !settled.value) continue;
+    const proceso = settled.value;
+    const adjudicacion = proceso.adjudicacion;
+    if (!adjudicacion) continue;
+    resultados.push({
+      procesoId: proceso.id,
+      entidad: proceso.entidad,
+      objeto: proceso.objeto,
+      categoria: proceso.categoria,
+      tipoProcedimiento: proceso.tipoProcedimiento,
+      fecha:
+        proceso.cronograma.find((e) => e.etapa === "Otorgamiento de buena pro")?.fecha ??
+        proceso.fechaPublicacion,
+      proveedorGanador: adjudicacion.proveedorGanador,
+      montoAdjudicado: adjudicacion.montoAdjudicado,
+      fuenteUrl: proceso.fuenteUrl ?? "",
+    });
+  }
+  return resultados;
+}
+
+export async function rankingCompetidoresLive(
+  categoria?: Categoria
+): Promise<AdjudicacionResumen[] | null> {
+  try {
+    const candidatos = await buscarProcesosLive({
+      categoria,
+      paginateBy: LIMITE_CANDIDATOS_ADJUDICACION,
+    });
+    if (!candidatos || candidatos.length === 0) return null;
+    const resultados = await detallarAdjudicaciones(candidatos);
+    return resultados.length > 0 ? resultados : null;
+  } catch {
+    return null;
+  }
+}
+
+export async function historialEntidadLive(entidad: string): Promise<AdjudicacionResumen[] | null> {
+  try {
+    const candidatos = await buscarProcesosLive({
+      query: entidad,
+      paginateBy: LIMITE_CANDIDATOS_ADJUDICACION,
+    });
+    if (!candidatos || candidatos.length === 0) return null;
+    // `search` es texto libre y puede traer procesos de entidades con nombres
+    // parecidos — nos quedamos con los que calzan con el nombre elegido si hay alguno.
+    const deLaEntidad = candidatos.filter((p) =>
+      p.entidad.toUpperCase().includes(entidad.toUpperCase())
+    );
+    const resultados = await detallarAdjudicaciones(
+      deLaEntidad.length > 0 ? deLaEntidad : candidatos
+    );
+    return resultados.length > 0 ? resultados : null;
   } catch {
     return null;
   }

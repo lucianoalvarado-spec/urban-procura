@@ -47,7 +47,8 @@ export const PLANES: DefinicionPlan[] = [
       "Matching inteligente con % de compatibilidad",
       "Mis oportunidades (CRM de seguimiento)",
       "Recomendaciones en el Dashboard",
-      "Alertas y calendario de plazos (próximamente)",
+      "Alertas y calendario de plazos",
+      "Comparador de procesos y ranking de competidores",
     ],
   },
   {
@@ -57,8 +58,8 @@ export const PLANES: DefinicionPlan[] = [
     resumen: "Para preparar la oferta más rápido, con ayuda de IA.",
     incluye: [
       "Todo lo de Profesional",
-      "Análisis de bases y expedientes con IA (próximamente)",
-      "Generación asistida de ofertas (próximamente)",
+      "Análisis de bases y expedientes con IA",
+      "Generación asistida de ofertas",
     ],
   },
 ];

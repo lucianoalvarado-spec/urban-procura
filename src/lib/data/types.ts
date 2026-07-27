@@ -94,6 +94,11 @@ export interface Proceso {
   fuente?: "mock" | "live";
   /** Link al proceso original en el Portal de Contrataciones Abiertas (solo si fuente === "live"). */
   fuenteUrl?: string;
+  /** Solo si el proceso ya tiene buena pro otorgada y la fuente publicó al ganador. */
+  adjudicacion?: {
+    proveedorGanador: string;
+    montoAdjudicado: number;
+  };
 }
 
 export interface DocumentoExperiencia {

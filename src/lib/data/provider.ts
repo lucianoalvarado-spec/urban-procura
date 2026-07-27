@@ -1,12 +1,16 @@
-import type { Proceso, Proveedor, Region } from "@/lib/data/types";
+import type { Categoria, Proceso, Proveedor, Region } from "@/lib/data/types";
 import { procesosMock } from "@/lib/data/mock/procesos";
 import { proveedorMock } from "@/lib/data/mock/proveedor";
+import { adjudicacionesMock } from "@/lib/data/mock/adjudicaciones";
 import {
   buscarProcesosLive,
   esIdProcesoLive,
+  historialEntidadLive,
   obtenerEstadisticasLive,
   obtenerProcesoLive,
   obtenerProcesosPorRegionLive,
+  rankingCompetidoresLive,
+  type AdjudicacionResumen,
   type EstadisticasOece,
 } from "@/lib/data/live/oece";
 
@@ -118,4 +122,38 @@ export async function obtenerEstadisticas(): Promise<EstadisticasOece | null> {
 // mapa del Dashboard debe indicarlo, no inventar números por región.
 export async function obtenerProcesosPorRegion(): Promise<Partial<Record<Region, number>> | null> {
   return obtenerProcesosPorRegionLive();
+}
+
+export interface AdjudicacionesResultado {
+  fuente: "live" | "mock";
+  adjudicaciones: AdjudicacionResumen[];
+}
+
+function aResumenMock(categoria?: Categoria): AdjudicacionResumen[] {
+  const filtradas = categoria
+    ? adjudicacionesMock.filter((a) => a.categoria === categoria)
+    : adjudicacionesMock;
+  return filtradas.map((a) => ({ ...a, fuenteUrl: "" }));
+}
+
+// A diferencia de listProcesos/getProceso, aquí SÍ hay fallback mock (a propósito,
+// distinto de obtenerEstadisticas/obtenerProcesosPorRegion): un ranking o historial
+// vacío se ve como "no hay nada que mostrar" en vez de "la fuente falló", así que
+// preferimos degradar a datos de muestra explícitamente etiquetados — mismo patrón
+// que listProcesos con los procesos mock.
+export async function obtenerRankingCompetidores(categoria?: Categoria): Promise<AdjudicacionesResultado> {
+  const live = await rankingCompetidoresLive(categoria);
+  if (live) return { fuente: "live", adjudicaciones: live };
+  return { fuente: "mock", adjudicaciones: aResumenMock(categoria) };
+}
+
+export async function obtenerHistorialEntidad(entidad: string): Promise<AdjudicacionesResultado> {
+  const live = await historialEntidadLive(entidad);
+  if (live) return { fuente: "live", adjudicaciones: live };
+  return {
+    fuente: "mock",
+    adjudicaciones: aResumenMock().filter((a) =>
+      a.entidad.toUpperCase().includes(entidad.toUpperCase())
+    ),
+  };
 }
