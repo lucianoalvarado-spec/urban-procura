@@ -101,10 +101,11 @@ export function PeruMapCard({ datos }: { datos: Partial<Record<Region, number>> 
                     onClick={() => setSeleccion(region)}
                   >
                     <title>
-                      {region}
-                      {datos[region] !== undefined
-                        ? `: ${formatMiles(datos[region] as number)} procesos`
-                        : ": sin datos"}
+                      {`${region}${
+                        datos[region] !== undefined
+                          ? `: ${formatMiles(datos[region] as number)} procesos`
+                          : ": sin datos"
+                      }`}
                     </title>
                   </path>
                 ))}
