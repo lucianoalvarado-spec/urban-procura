@@ -13,6 +13,20 @@ import { EstadoCrmSelect } from "@/components/crm/estado-crm-select";
 import { UpgradeNotice, LockedInline } from "@/components/plan/upgrade-notice";
 import { cumplePlan } from "@/lib/plan";
 import { EntitySelect } from "@/components/shared/entity-select";
+import { cn } from "@/lib/cn";
+import {
+  agregarVigilancia,
+  estaVigilado,
+  quitarVigilancia,
+  useProcesosVigilados,
+} from "@/lib/state/alertas-procesos-store";
+import {
+  MAX_COMPARADOS,
+  agregarAComparador,
+  estaEnComparador,
+  quitarDeComparador,
+  useComparadorSeleccion,
+} from "@/lib/state/comparador-store";
 
 const LIMITE_PLAN_FREE = 5;
 
@@ -49,6 +63,13 @@ export function ExploradorClient({ procesos }: { procesos: Proceso[] }) {
   const puedeMatchCrm = cumplePlan(proveedor.plan, "profesional");
   const limitadoPorPlan = proveedor.plan === "free";
   const ordenEfectivo = orden === "match" && !puedeMatchCrm ? "plazo" : orden;
+
+  // Campana "agregar alerta" (seguimiento individual, distinto de los rubros de
+  // /alertas) y "+" para el Comparador — ambas requieren plan Profesional, igual que
+  // las pantallas a las que alimentan.
+  const puedeAlertasYComparador = cumplePlan(proveedor.plan, "profesional");
+  const vigilados = useProcesosVigilados();
+  const comparadorSeleccion = useComparadorSeleccion();
 
   // Búsqueda en vivo: el lote inicial (`procesos`, prop) es fijo y nunca va a contener
   // todas las entidades del portal (~2.7M de registros históricos). Cuando el usuario
@@ -336,6 +357,17 @@ export function ExploradorClient({ procesos }: { procesos: Proceso[] }) {
                 </div>
               </div>
               <div className="flex shrink-0 items-center gap-2">
+                <AlertaBellButton
+                  proceso={proceso}
+                  vigilado={estaVigilado(proceso.id, vigilados)}
+                  habilitado={puedeAlertasYComparador}
+                />
+                <ComparadorPlusButton
+                  proceso={proceso}
+                  seleccionado={estaEnComparador(proceso.id, comparadorSeleccion)}
+                  lleno={comparadorSeleccion.length >= MAX_COMPARADOS}
+                  habilitado={puedeAlertasYComparador}
+                />
                 {puedeMatchCrm && <EstadoCrmSelect procesoId={proceso.id} />}
                 <Link
                   href={`/procesos/${proceso.id}`}
@@ -349,6 +381,89 @@ export function ExploradorClient({ procesos }: { procesos: Proceso[] }) {
         ))}
       </div>
     </div>
+  );
+}
+
+function AlertaBellButton({
+  proceso,
+  vigilado,
+  habilitado,
+}: {
+  proceso: Proceso;
+  vigilado: boolean;
+  habilitado: boolean;
+}) {
+  return (
+    <button
+      type="button"
+      disabled={!habilitado}
+      title={
+        !habilitado
+          ? "Disponible desde el plan Profesional"
+          : vigilado
+            ? "Quitar alerta de este proceso"
+            : "Agregar alerta — te avisamos en Alertas si cambia la fecha o el plazo está por vencer"
+      }
+      onClick={() =>
+        vigilado
+          ? quitarVigilancia(proceso.id)
+          : agregarVigilancia({
+              id: proceso.id,
+              objeto: proceso.objeto,
+              entidad: proceso.entidad,
+              fechaLimitePresentacion: proceso.fechaLimitePresentacion,
+              estado: proceso.estado,
+            })
+      }
+      className={cn(
+        "rounded-lg border px-2 py-1.5 text-sm leading-none",
+        vigilado
+          ? "border-[var(--brand-300)] bg-[var(--brand-50)]"
+          : "border-[var(--border)] text-slate-500 hover:bg-[var(--surface-muted)]",
+        !habilitado && "cursor-not-allowed opacity-40"
+      )}
+    >
+      🔔
+    </button>
+  );
+}
+
+function ComparadorPlusButton({
+  proceso,
+  seleccionado,
+  lleno,
+  habilitado,
+}: {
+  proceso: Proceso;
+  seleccionado: boolean;
+  lleno: boolean;
+  habilitado: boolean;
+}) {
+  const bloqueado = !habilitado || (!seleccionado && lleno);
+  return (
+    <button
+      type="button"
+      disabled={bloqueado}
+      title={
+        !habilitado
+          ? "Disponible desde el plan Profesional"
+          : seleccionado
+            ? "Quitar del comparador"
+            : lleno
+              ? `Ya tienes ${MAX_COMPARADOS} procesos en el comparador`
+              : "Comparar Proceso"
+      }
+      onClick={() => (seleccionado ? quitarDeComparador(proceso.id) : agregarAComparador(proceso))}
+      className={cn(
+        "rounded-lg border px-2.5 py-1.5 text-sm font-semibold leading-none",
+        seleccionado
+          ? "border-[var(--brand-300)] bg-[var(--brand-50)] text-[var(--brand-600)]"
+          : "border-[var(--border)] text-slate-500 hover:bg-[var(--surface-muted)]",
+        bloqueado && "cursor-not-allowed opacity-40"
+      )}
+    >
+      {seleccionado ? "✓" : "+"}
+    </button>
   );
 }
 

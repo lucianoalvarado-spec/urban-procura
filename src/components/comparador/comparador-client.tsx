@@ -1,6 +1,5 @@
 "use client";
 
-import { useState } from "react";
 import Link from "next/link";
 import type { Proceso } from "@/lib/data/types";
 import { useProveedor } from "@/lib/state/proveedor-context";
@@ -11,12 +10,19 @@ import { MatchBadge } from "@/components/ui/badge";
 import { UpgradeNotice, LockedInline } from "@/components/plan/upgrade-notice";
 import { cumplePlan } from "@/lib/plan";
 import { ProcesoSearchBox } from "@/components/shared/proceso-search-box";
-
-const MAX_COMPARADOS = 4;
+import {
+  MAX_COMPARADOS,
+  agregarAComparador,
+  quitarDeComparador,
+  useComparadorSeleccion,
+} from "@/lib/state/comparador-store";
 
 export function ComparadorClient({ procesosIniciales }: { procesosIniciales: Proceso[] }) {
   const { proveedor } = useProveedor();
-  const [seleccionados, setSeleccionados] = useState<Proceso[]>([]);
+  // Compartido con el botón "+" del Explorador (comparador-store, persistido en
+  // localStorage) — antes era useState local y un proceso agregado desde el
+  // Explorador se perdía al navegar a esta página.
+  const seleccionados = useComparadorSeleccion();
   const puedeMatch = cumplePlan(proveedor.plan, "profesional");
 
   if (!cumplePlan(proveedor.plan, "profesional")) {
@@ -30,16 +36,8 @@ export function ComparadorClient({ procesosIniciales }: { procesosIniciales: Pro
     );
   }
 
-  const agregar = (proceso: Proceso) => {
-    if (seleccionados.length >= MAX_COMPARADOS) return;
-    if (seleccionados.some((p) => p.id === proceso.id)) return;
-    setSeleccionados((prev) => [...prev, proceso]);
-  };
-
-  const quitar = (id: string) => {
-    setSeleccionados((prev) => prev.filter((p) => p.id !== id));
-  };
-
+  const agregar = agregarAComparador;
+  const quitar = quitarDeComparador;
   const lleno = seleccionados.length >= MAX_COMPARADOS;
 
   const filas: { label: string; render: (proceso: Proceso) => React.ReactNode }[] = [
