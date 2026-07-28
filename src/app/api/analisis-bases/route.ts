@@ -28,7 +28,7 @@ interface ProcesoResumen {
   entidad: string;
   categoria: string;
   tipoProcedimiento: string;
-  montoReferencial: number;
+  montoReferencial: number | null;
 }
 
 const PROMPT_SISTEMA = `Eres un asistente que ayuda a proveedores del Estado peruano a entender las bases de un proceso de contratación pública (SEACE/OECE). Analiza el texto de bases que te pasa el usuario y responde ÚNICAMENTE con un objeto JSON válido (sin markdown, sin texto antes o después), con esta forma exacta:
@@ -83,7 +83,7 @@ export async function POST(request: NextRequest) {
 
   const proceso = body?.proceso;
   const contextoProceso = proceso
-    ? `Proceso: "${proceso.objeto}" — Entidad: ${proceso.entidad} — Categoría: ${proceso.categoria} — Tipo de procedimiento: ${proceso.tipoProcedimiento} — Monto referencial: S/ ${proceso.montoReferencial.toLocaleString("es-PE")}.\n\n`
+    ? `Proceso: "${proceso.objeto}" — Entidad: ${proceso.entidad} — Categoría: ${proceso.categoria} — Tipo de procedimiento: ${proceso.tipoProcedimiento} — Monto referencial: ${proceso.montoReferencial !== null ? `S/ ${proceso.montoReferencial.toLocaleString("es-PE")}` : "no publicado por la entidad"}.\n\n`
     : "";
 
   try {

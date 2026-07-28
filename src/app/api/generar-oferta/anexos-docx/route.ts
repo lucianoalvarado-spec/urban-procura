@@ -10,7 +10,7 @@ interface ProcesoResumen {
   entidad: string;
   categoria: string;
   tipoProcedimiento: string;
-  montoReferencial: number;
+  montoReferencial: number | null;
 }
 
 interface ProveedorResumen {
@@ -73,7 +73,7 @@ export async function POST(request: NextRequest) {
     new Paragraph({ text: "Anexos de la oferta", heading: HeadingLevel.TITLE }),
     new Paragraph({ text: proceso.objeto, heading: HeadingLevel.HEADING_2 }),
     new Paragraph({
-      text: `${proceso.entidad} · ${proceso.categoria} / ${proceso.tipoProcedimiento} · S/ ${proceso.montoReferencial.toLocaleString("es-PE")}`,
+      text: `${proceso.entidad} · ${proceso.categoria} / ${proceso.tipoProcedimiento} · ${proceso.montoReferencial !== null ? `S/ ${proceso.montoReferencial.toLocaleString("es-PE")}` : "monto referencial no publicado por la entidad"}`,
     }),
     new Paragraph({ text: `Presentado por: ${proveedor.razonSocial} (RUC ${proveedor.ruc})` }),
     new Paragraph({ text: "" }),

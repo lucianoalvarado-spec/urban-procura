@@ -25,7 +25,7 @@ function agregar(resultado: AdjudicacionesResultado): FilaRanking[] {
       montoTotal: 0,
     };
     actual.cantidad += 1;
-    actual.montoTotal += a.montoAdjudicado;
+    actual.montoTotal += a.montoAdjudicado ?? 0;
     mapa.set(a.proveedorGanador, actual);
   }
   return Array.from(mapa.values()).sort((a, b) => b.montoTotal - a.montoTotal);

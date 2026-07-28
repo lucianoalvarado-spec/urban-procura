@@ -208,7 +208,10 @@ function resumenAProceso(item: OceResultadoBusqueda): Proceso | null {
     tipoProcedimiento: tender.procurementMethodDetails || "No especificado",
     estado: mapEstado(undefined, tender.status),
     monedaSimbolo: "S/",
-    montoReferencial: tender.value?.amount ?? 0,
+    // `|| null`, no `?? null`: el OECE publica `amount: 0` literal (confirmado con curl)
+    // cuando la entidad no llenó el campo en el SEACE — un proceso real nunca tiene
+    // valor referencial genuinamente cero, así que 0 se trata igual que ausente.
+    montoReferencial: tender.value?.amount || null,
     fechaPublicacion: tender.datePublished || cr.date || new Date().toISOString(),
     fechaLimitePresentacion:
       tender.tenderPeriod?.endDate || tender.datePublished || cr.date || new Date().toISOString(),
@@ -297,7 +300,7 @@ function releaseADetalleProceso(release: OceReleaseDetalle): Proceso | null {
         proveedorGanador:
           (awardConGanador.suppliers ?? []).map((s) => s.name).filter(Boolean).join(" / ") ||
           "Proveedor no especificado",
-        montoAdjudicado: awardConGanador.value?.amount ?? 0,
+        montoAdjudicado: awardConGanador.value?.amount || null,
       }
     : undefined;
 
@@ -312,7 +315,7 @@ function releaseADetalleProceso(release: OceReleaseDetalle): Proceso | null {
     tipoProcedimiento: tender.procurementMethodDetails || "No especificado",
     estado: mapEstado(release.tag, tender.status),
     monedaSimbolo: "S/",
-    montoReferencial: tender.value?.amount ?? 0,
+    montoReferencial: tender.value?.amount || null,
     fechaPublicacion: tender.datePublished || release.date || new Date().toISOString(),
     // Preferimos enquiryPeriod.endDate (real, distinto por proceso) sobre
     // tenderPeriod.endDate (siempre = fecha de convocatoria en SEACE V3, así que un
@@ -419,7 +422,7 @@ export interface AdjudicacionResumen {
   tipoProcedimiento: string;
   fecha: string;
   proveedorGanador: string;
-  montoAdjudicado: number;
+  montoAdjudicado: number | null;
   fuenteUrl: string;
 }
 

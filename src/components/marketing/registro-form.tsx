@@ -158,7 +158,7 @@ export function RegistroForm() {
                       setRuc(e.target.value.replace(/\D/g, ""));
                       setRnp(null);
                     }}
-                    placeholder="20601234567"
+                    placeholder="20601234565"
                     className="flex-1 rounded-lg border border-[var(--border)] px-3 py-2 text-sm focus:border-[var(--brand-500)] focus:outline-none"
                   />
                   <button

@@ -18,7 +18,7 @@ interface ProcesoResumen {
   entidad: string;
   categoria: string;
   tipoProcedimiento: string;
-  montoReferencial: number;
+  montoReferencial: number | null;
   descripcion: string;
 }
 
@@ -131,7 +131,7 @@ export async function POST(request: NextRequest) {
 
   try {
     const contexto = [
-      `Proceso: "${body.proceso.objeto}" — ${body.proceso.entidad} — ${body.proceso.categoria} / ${body.proceso.tipoProcedimiento} — S/ ${body.proceso.montoReferencial.toLocaleString("es-PE")}.`,
+      `Proceso: "${body.proceso.objeto}" — ${body.proceso.entidad} — ${body.proceso.categoria} / ${body.proceso.tipoProcedimiento} — ${body.proceso.montoReferencial !== null ? `S/ ${body.proceso.montoReferencial.toLocaleString("es-PE")}` : "monto referencial no publicado por la entidad"}.`,
       `Descripción: ${body.proceso.descripcion}`,
       `Proveedor: ${body.proveedor.razonSocial} (${body.proveedor.nombreComercial}).`,
       `Experiencia relevante: ${borrador.experienciaRelevante.join("; ") || "sin experiencia registrada en este rubro"}.`,

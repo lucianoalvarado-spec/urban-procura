@@ -1,4 +1,5 @@
-export function formatMonto(monto: number, moneda: string = "S/"): string {
+export function formatMonto(monto: number | null, moneda: string = "S/"): string {
+  if (monto === null) return "No publicado por la entidad";
   return `${moneda} ${monto.toLocaleString("es-PE")}`;
 }
 

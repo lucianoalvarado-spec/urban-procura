@@ -4,7 +4,7 @@ import type { Proveedor } from "@/lib/data/types";
 // demostrar matching, CRM y ficha de proceso mientras no hay autenticación real.
 
 export const proveedorMock: Proveedor = {
-  ruc: "20601234567",
+  ruc: "20601234565",
   razonSocial: "Constructora Vientos del Sur S.A.C.",
   nombreComercial: "Vientos del Sur",
   representanteLegal: "María Fernanda Quispe Rojas",

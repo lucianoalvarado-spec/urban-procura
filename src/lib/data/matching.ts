@@ -20,9 +20,15 @@ const PESOS = {
   experiencia: 10,
 };
 
+// Umbrales de compatibilidad, únicos y explícitos para todo el producto — Dashboard,
+// Explorador, Comparador y Ranking nunca recalculan el nivel por su cuenta: todos pasan
+// por computeMatch() y consumen el `nivel` ya resuelto aquí, así que ajustar estos dos
+// números basta para cambiar el corte en toda la app de forma consistente.
+export const UMBRALES_MATCH: { alto: number; medio: number } = { alto: 70, medio: 40 };
+
 function nivelDeScore(score: number): NivelMatch {
-  if (score >= 70) return "alto";
-  if (score >= 40) return "medio";
+  if (score >= UMBRALES_MATCH.alto) return "alto";
+  if (score >= UMBRALES_MATCH.medio) return "medio";
   return "bajo";
 }
 
@@ -49,7 +55,9 @@ export function computeMatch(
     faltantes.push(`Rubro no priorizado en tus preferencias (${proceso.categoria})`);
   }
 
-  if (
+  if (proceso.montoReferencial === null) {
+    // La entidad no publicó un valor referencial: ni premia ni penaliza el match.
+  } else if (
     proceso.montoReferencial >= preferencias.montoMinimo &&
     proceso.montoReferencial <= preferencias.montoMaximo
   ) {

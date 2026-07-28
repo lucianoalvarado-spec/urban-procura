@@ -80,8 +80,10 @@ function filtrarMock(filter: ProcesosFilter): Proceso[] {
     if (subcategoria && proceso.subcategoria !== subcategoria) return false;
     if (tipoProcedimiento && proceso.tipoProcedimiento !== tipoProcedimiento) return false;
     if (estado && proceso.estado !== estado) return false;
-    if (typeof montoMin === "number" && proceso.montoReferencial < montoMin) return false;
-    if (typeof montoMax === "number" && proceso.montoReferencial > montoMax) return false;
+    if (typeof montoMin === "number" && proceso.montoReferencial !== null && proceso.montoReferencial < montoMin)
+      return false;
+    if (typeof montoMax === "number" && proceso.montoReferencial !== null && proceso.montoReferencial > montoMax)
+      return false;
     return true;
   });
 }

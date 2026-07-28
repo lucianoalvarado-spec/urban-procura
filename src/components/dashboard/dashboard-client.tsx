@@ -52,7 +52,12 @@ export function DashboardClient({
   const mejorMatch = matches[0];
 
   const recomendados = matches
-    .filter(({ proceso, match }) => ESTADOS_ACTIVOS.has(proceso.estado) && match.nivel !== "bajo")
+    .filter(
+      ({ proceso, match }) =>
+        ESTADOS_ACTIVOS.has(proceso.estado) &&
+        match.nivel !== "bajo" &&
+        diasRestantes(proceso.fechaLimitePresentacion) >= 0
+    )
     .slice(0, 5);
 
   const primerNombre = proveedor.representanteLegal.split(" ")[0];

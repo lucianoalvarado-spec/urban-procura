@@ -82,7 +82,8 @@ export interface Proceso {
   tipoProcedimiento: string;
   estado: EstadoProceso;
   monedaSimbolo: "S/";
-  montoReferencial: number;
+  /** null cuando la entidad no publicó un valor referencial en el OCDS (distinto de 0 genuino). */
+  montoReferencial: number | null;
   fechaPublicacion: string; // ISO date
   fechaLimitePresentacion: string; // ISO date
   experienciaMinimaRequerida: number; // monto mínimo facturado acumulado exigido; 0 = no especificado en la fuente
@@ -97,7 +98,7 @@ export interface Proceso {
   /** Solo si el proceso ya tiene buena pro otorgada y la fuente publicó al ganador. */
   adjudicacion?: {
     proveedorGanador: string;
-    montoAdjudicado: number;
+    montoAdjudicado: number | null;
   };
 }
 

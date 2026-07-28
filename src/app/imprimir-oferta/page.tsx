@@ -10,7 +10,13 @@ import type { BorradorOferta } from "@/app/api/generar-oferta/route";
 // sessionStorage porque esta pestaña se abre nueva desde /automatizacion.
 interface PayloadImpresion {
   borrador: BorradorOferta;
-  proceso: { objeto: string; entidad: string; categoria: string; tipoProcedimiento: string; montoReferencial: number };
+  proceso: {
+    objeto: string;
+    entidad: string;
+    categoria: string;
+    tipoProcedimiento: string;
+    montoReferencial: number | null;
+  };
   proveedor: { razonSocial: string; ruc: string };
 }
 
@@ -64,8 +70,10 @@ export default function ImprimirOfertaPage() {
       <h1 className="text-2xl font-semibold">Propuesta técnica</h1>
       <h2 className="mt-1 text-lg font-medium text-slate-700">{proceso.objeto}</h2>
       <p className="mt-1 text-sm text-slate-500">
-        {proceso.entidad} · {proceso.categoria} / {proceso.tipoProcedimiento} · S/{" "}
-        {proceso.montoReferencial.toLocaleString("es-PE")}
+        {proceso.entidad} · {proceso.categoria} / {proceso.tipoProcedimiento} ·{" "}
+        {proceso.montoReferencial !== null
+          ? `S/ ${proceso.montoReferencial.toLocaleString("es-PE")}`
+          : "monto referencial no publicado por la entidad"}
       </p>
       <p className="text-sm text-slate-500">
         Presentado por: {proveedor.razonSocial} (RUC {proveedor.ruc})

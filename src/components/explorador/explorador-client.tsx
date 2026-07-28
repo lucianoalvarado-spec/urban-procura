@@ -151,8 +151,10 @@ export function ExploradorClient({ procesos }: { procesos: Proceso[] }) {
       if (filtros.tipoProcedimiento && p.tipoProcedimiento !== filtros.tipoProcedimiento)
         return false;
       if (filtros.estado && p.estado !== filtros.estado) return false;
-      if (typeof montoMin === "number" && p.montoReferencial < montoMin) return false;
-      if (typeof montoMax === "number" && p.montoReferencial > montoMax) return false;
+      if (typeof montoMin === "number" && p.montoReferencial !== null && p.montoReferencial < montoMin)
+        return false;
+      if (typeof montoMax === "number" && p.montoReferencial !== null && p.montoReferencial > montoMax)
+        return false;
       return true;
     });
 
@@ -163,7 +165,8 @@ export function ExploradorClient({ procesos }: { procesos: Proceso[] }) {
 
     conMatch.sort((a, b) => {
       if (ordenEfectivo === "match") return b.match.score - a.match.score;
-      if (ordenEfectivo === "monto") return b.proceso.montoReferencial - a.proceso.montoReferencial;
+      if (ordenEfectivo === "monto")
+        return (b.proceso.montoReferencial ?? 0) - (a.proceso.montoReferencial ?? 0);
       return (
         new Date(a.proceso.fechaLimitePresentacion).getTime() -
         new Date(b.proceso.fechaLimitePresentacion).getTime()
