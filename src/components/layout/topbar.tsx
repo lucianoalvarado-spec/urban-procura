@@ -12,33 +12,37 @@ export function Topbar() {
   const { proveedor } = useProveedor();
 
   return (
-    <header className="flex h-14 items-center justify-between border-b border-[var(--border)] bg-[var(--surface)] px-4 md:px-6">
-      <div className="min-w-0">
-        <p className="truncate text-sm font-medium text-[var(--foreground)]">
-          {proveedor.nombreComercial}
-        </p>
-        <p className="truncate text-xs text-slate-500">RUC {proveedor.ruc}</p>
+    <header className="flex h-14 items-center justify-between border-b-[3px] border-[var(--brand-600)] bg-[var(--navy)] px-4 text-[#F2F4F1] md:px-6">
+      <div className="flex min-w-0 items-center gap-6">
+        <div className="min-w-0">
+          <p className="font-heading text-[10px] uppercase tracking-wider text-[#9FB4C2]">Proveedor</p>
+          <p className="truncate text-sm font-medium">{proveedor.nombreComercial}</p>
+        </div>
+        <div className="hidden min-w-0 sm:block">
+          <p className="font-heading text-[10px] uppercase tracking-wider text-[#9FB4C2]">RUC</p>
+          <p className="truncate font-mono text-sm">{proveedor.ruc}</p>
+        </div>
       </div>
       <div className="flex items-center gap-3">
-        <label className="flex items-center gap-1.5 text-xs text-slate-500">
+        <label className="flex items-center gap-1.5 text-xs text-[#9FB4C2]">
           Plan
           <select
             value={proveedor.plan}
             onChange={(e) => setPlan(e.target.value as PlanComercial)}
             title="Cambiar de plan (solo para explorar la demo)"
-            className="rounded-full border border-[var(--border)] bg-[var(--surface-muted)] px-2.5 py-1 text-xs font-medium text-[var(--foreground)] focus:border-[var(--brand-500)] focus:outline-none"
+            className="rounded-full border border-white/20 bg-white/5 px-2.5 py-1 text-xs font-medium text-white focus:border-[var(--brand-500)] focus:outline-none"
           >
             {PLANES.map((plan) => (
-              <option key={plan} value={plan}>
+              <option key={plan} value={plan} className="text-[var(--foreground)]">
                 {PLAN_LABEL[plan]}
               </option>
             ))}
           </select>
         </label>
-        <Link href="/" className="text-xs font-medium text-slate-400 hover:text-slate-600">
+        <Link href="/" className="text-xs font-medium text-[#9FB4C2] hover:text-white">
           Salir
         </Link>
-        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[var(--brand-100)] text-xs font-semibold text-[var(--brand-700)]">
+        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[var(--brand-600)] text-xs font-semibold text-white">
           {proveedor.representanteLegal
             .split(" ")
             .slice(0, 2)

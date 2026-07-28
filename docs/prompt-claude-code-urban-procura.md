@@ -41,6 +41,19 @@ Con base en esto: **diseña la capa de datos como un adaptador reemplazable** (`
 
 ---
 
+## 3bis. Marco legal vigente — Ley N° 32069, no Ley 30225
+
+Importante: Perú ya no se rige por la Ley 30225 "Ley de Contrataciones del Estado". Desde 2025/2026 rige la **Ley N° 32069 "Ley General de Contrataciones Públicas"**, con su reglamento aprobado por **Decreto Supremo N° 009-2025-EF** (modificado por **Decreto Supremo N° 001-2026-MEF**). Todo el producto debe construirse sobre esta base, no sobre la nomenclatura antigua:
+
+- Los tipos de procedimiento cambiaron. Para **obras** (el foco de Urban Procura), ya no existen "Adjudicación Simplificada" ni "Concurso Público" — ahora son **"Licitación pública de obras"** (montos mayores) y **"Licitación pública abreviada de obras"** (montos menores). También existen variantes con precalificación, diálogo competitivo, etc., pero estas dos son las relevantes para el MVP.
+- Las **bases estándar** (los documentos maestros que definen qué anexos debe presentar un postor) ya **no las emite OSCE/OECE** — ahora las emite el **MEF, a través de su Dirección General de Abastecimiento**, mediante la **Directiva N° 0005-2025-EF/54.01** (aprobada por Resolución Directoral N° 0015-2025-EF/54.01, modificada por Resolución Directoral N° 0001-2026-EF/54.01). Fuente: https://www.gob.pe/institucion/mef/normas-legales/7614342-001-2026-ef-54-01
+- Esa directiva define 13 tipos de bases estandarizadas. Para Urban Procura, descarga y usa como referencia especialmente: **"Bases estándar de Licitación pública de obras"** y **"Bases estándar de Licitación pública abreviada de obras"** — ahí está el listado real y numerado de anexos que debe llenar el postor (declaración jurada de datos del postor, de no impedimento para contratar con el Estado, de plazo de ejecución, promesa de consorcio, compromiso de personal clave, oferta económica, entre otros). No asumas que la numeración de la antigua normativa (Directiva 001-2019-OSCE/CD) sigue vigente — verifica contra el documento actual.
+- OECE (antes OSCE) sigue siendo responsable de operar el SEACE, el RNP y el Portal de Contrataciones Abiertas (OCDS) — solo la emisión de bases estándar se movió al MEF. No confundas ambas fuentes al documentar de dónde sale cada dato.
+
+**Estado: ya implementado** (ver `CLAUDE.md`, sección "Anexos oficiales de licitación de obras") — `src/lib/generacion-ofertas/anexos-obras.ts` genera los 17 anexos reales de las bases estándar vigentes, extraídos y verificados directamente de los .docx del MEF, no de esta descripción.
+
+---
+
 ## 4. Arquitectura sugerida (ajustable)
 
 - Backend + frontend en un mismo framework full-stack (ej. Next.js) o separados (ej. API en Node/Express o Python/FastAPI + frontend en React) — el que te resulte más mantenible.

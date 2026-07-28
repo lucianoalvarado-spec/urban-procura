@@ -1,33 +1,38 @@
 @import "tailwindcss";
 
+/* Identidad "plano de ingeniería" — navy + naranja, IBM Plex + Barlow Condensed.
+   Reemplaza la paleta SaaS genérica anterior (índigo sobre gris claro). */
 :root {
-  --background: #f6f7fb;
-  --foreground: #101425;
-  --surface: #ffffff;
-  --surface-muted: #eef0f7;
-  --border: #e2e5f0;
+  --background: #eef1ec; /* paper */
+  --foreground: #1c2b33; /* ink */
+  --surface: #ffffff; /* card */
+  --surface-muted: #f5f6f3;
+  --border: #c7d0cb; /* line */
 
-  --brand-50: #eef2ff;
-  --brand-100: #e0e7ff;
-  --brand-500: #4f46e5;
-  --brand-600: #4338ca;
-  --brand-700: #3730a3;
+  --navy: #0f2a3e;
+  --navy-2: #16405c;
 
-  --match-alto: #15803d;
-  --match-alto-bg: #dcfce7;
-  --match-medio: #a16207;
-  --match-medio-bg: #fef3c7;
-  --match-bajo: #64748b;
-  --match-bajo-bg: #f1f5f9;
+  --brand-50: #fbeae3;
+  --brand-100: #f5d1c2;
+  --brand-500: #e2571f;
+  --brand-600: #e2571f; /* orange */
+  --brand-700: #b8410f; /* orange-dark */
+
+  --match-alto: #2f6b45;
+  --match-alto-bg: #e1eee4;
+  --match-medio: #9a6b0c;
+  --match-medio-bg: #f5ecd8;
+  --match-bajo: #5b6b72;
+  --match-bajo-bg: #e7e9e6;
 
   --plan-free: #57534e;
   --plan-free-bg: #f5f5f4;
-  --plan-basico: #475569;
-  --plan-basico-bg: #f1f5f9;
-  --plan-profesional: #1d4ed8;
-  --plan-profesional-bg: #dbeafe;
-  --plan-premium: #7e22ce;
-  --plan-premium-bg: #f3e8ff;
+  --plan-basico: #16405c;
+  --plan-basico-bg: #e7ecee;
+  --plan-profesional: #b8410f;
+  --plan-profesional-bg: #fbeae3;
+  --plan-premium: #0f2a3e;
+  --plan-premium-bg: #e7ecee;
 }
 
 @theme inline {
@@ -43,12 +48,26 @@
   --color-brand-600: var(--brand-600);
   --color-brand-700: var(--brand-700);
 
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --font-sans: var(--font-plex-sans);
+  --font-mono: var(--font-plex-mono);
+  --font-heading: var(--font-barlow-condensed);
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
   font-family: var(--font-sans), Arial, Helvetica, sans-serif;
+  background-image:
+    linear-gradient(var(--border) 1px, transparent 1px),
+    linear-gradient(90deg, var(--border) 1px, transparent 1px);
+  background-size: 28px 28px;
+  background-position: -1px -1px;
+}
+
+h1,
+h2,
+h3,
+.font-heading {
+  font-family: var(--font-heading), "Barlow Condensed", sans-serif;
+  letter-spacing: 0.01em;
 }
