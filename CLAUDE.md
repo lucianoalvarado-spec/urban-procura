@@ -10,6 +10,8 @@ Fase 1: **interfaz inicial, sin base de datos ni autenticación real.** El perfi
 
 **Flujo de trabajo pedido por el usuario: todo queda local, nunca hacer `git push` sin que lo pida explícitamente en ese mismo turno** (una aprobación anterior no es autorización permanente). Está bien hacer `git commit` para guardar avance. Verificar cambios contra el dev server local (`npm run dev` + Browser pane), no contra producción.
 
+**Punto de partida de la próxima sesión:** hay 3 commits locales sin subir (`git log origin/main..HEAD`): alertas de documentos por vencer, los anexos oficiales de Ley 32069 (Generación de ofertas) y el rediseño visual completo ("Identidad visual" más abajo). Producción todavía no los tiene — solo tiene hasta el fix del relay local del OECE. Si el usuario pide continuar o desplegar, confirmar primero si quiere subir estos 3 commits.
+
 Stack: Next.js **15.5.21** (App Router) + React 19 + TypeScript + Tailwind v4. `npm run dev` / `npm run build` / `npm run lint`.
 
 ⚠️ **No subir a Next.js 16.x sin probar el deploy primero.** Se usó Next 16.2.11 al inicio del proyecto y tanto Vercel (`vercel build`) como Netlify (`@netlify/plugin-nextjs`) fallaron en producción de formas distintas y difíciles de diagnosticar (ver "Despliegue" más abajo) — aunque el build local funcionaba perfecto. Se bajó a 15.5.21 (última estable al momento) y ambos problemas desaparecieron. Si se vuelve a subir de versión mayor, validar con un deploy real antes de asumir que "compila" = "funciona en producción".
@@ -172,3 +174,7 @@ Sin construir todavía: nada queda como placeholder "próximamente" — las 7 fu
 - Mover preferencias/CRM/plan/datos de empresa/reclamos de `localStorage` a persistencia por usuario en backend.
 - El gating por plan hoy es solo de UI (cualquiera puede cambiar el `<select>` del Topbar o editar `localStorage`); con backend, la fuente de verdad del plan debe venir del servidor.
 - Confirmar si el fix de `preferredRegion`/timeout realmente resolvió los problemas de conectividad en producción (no verificado a fondo por falta de acceso a logs de Vercel).
+- El relay local (`local-relay/` + Cloudflare Tunnel) depende de que la PC del usuario esté prendida con dos terminales corriendo — evaluar automatizarlo (servicio de Windows / Task Scheduler) o conseguir un túnel con nombre (dominio propio en Cloudflare) para que la URL no cambie en cada reinicio.
+- `cloudflare-relay/` (el intento con Cloudflare Workers) quedó en el repo pero confirmado que NO funciona para este caso — evaluar si borrarlo o dejarlo documentado como referencia.
+- El rediseño visual no tocó `text-slate-*` (gris de Tailwind) en cada página individual — si se quiere fidelidad total al mockup en textos secundarios, sería la siguiente iteración (ver "Identidad visual").
+- Verificar en producción (una vez subidos los 3 commits pendientes) que el rediseño visual se vea bien — no se pudo tomar captura de pantalla en la sesión que lo hizo, solo se verificó por estilos computados y ausencia de errores de consola.
