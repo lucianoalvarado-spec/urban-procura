@@ -12,6 +12,7 @@ import {
   useProcesosVigilados,
 } from "@/lib/state/alertas-procesos-store";
 import { diasRestantes, formatFecha, formatMonto } from "@/lib/format";
+import { documentosPorVencer, estiloVigencia, etiquetaVigencia, textoVigencia } from "@/lib/data/documentos";
 import { Card, CardBody } from "@/components/ui/card";
 import { MatchBadge } from "@/components/ui/badge";
 import { UpgradeNotice, LockedInline } from "@/components/plan/upgrade-notice";
@@ -68,6 +69,8 @@ export function AlertasClient({ procesos }: { procesos: Proceso[] }) {
     (a, b) => new Date(b.agregadoEn).getTime() - new Date(a.agregadoEn).getTime()
   );
 
+  const documentosVencimiento = documentosPorVencer(proveedor.documentosRepositorio);
+
   return (
     <div className="mx-auto flex max-w-4xl flex-col gap-6">
       <div>
@@ -76,6 +79,43 @@ export function AlertasClient({ procesos }: { procesos: Proceso[] }) {
           Vencimientos en los próximos {VENTANA_DIAS} días de los rubros que sigues.
         </p>
       </div>
+
+      {documentosVencimiento.length > 0 && (
+        <div className="flex flex-col gap-3">
+          <div>
+            <h2 className="text-sm font-semibold text-[var(--foreground)]">
+              Documentos por vencer
+            </h2>
+            <p className="text-xs text-slate-500">
+              Documentos habilitantes de tu Perfil con vigencia próxima o vencida — la causa
+              más común de descalificar una oferta por algo evitable.
+            </p>
+          </div>
+          {documentosVencimiento.map(({ documento, dias }) => (
+            <Card key={documento.id} className={estiloVigencia(dias)}>
+              <CardBody className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                <div className="min-w-0 flex-1">
+                  <Link
+                    href="/perfil"
+                    className="text-sm font-semibold text-[var(--foreground)] hover:underline"
+                  >
+                    {documento.nombre}
+                  </Link>
+                  <p className="mt-0.5 text-xs text-slate-500">{documento.categoria}</p>
+                </div>
+                <div className="shrink-0 text-right">
+                  <p className={`text-sm font-semibold ${textoVigencia(dias)}`}>
+                    {etiquetaVigencia(dias)}
+                  </p>
+                  <p className="text-xs text-slate-400">
+                    {formatFecha(documento.fechaVigencia)}
+                  </p>
+                </div>
+              </CardBody>
+            </Card>
+          ))}
+        </div>
+      )}
 
       {vigilanciasOrdenadas.length > 0 && (
         <div className="flex flex-col gap-3">

@@ -4,9 +4,12 @@ import { useState } from "react";
 import { useProveedor } from "@/lib/state/proveedor-context";
 import type { DocumentoRepositorio } from "@/lib/data/types";
 import { generarId } from "@/lib/id";
-import { formatFecha } from "@/lib/format";
+import { formatFecha, diasRestantes } from "@/lib/format";
+import { estiloVigencia, etiquetaVigencia, textoVigencia } from "@/lib/data/documentos";
 import { Card, CardBody, CardHeader } from "@/components/ui/card";
 import { TextField, SelectField } from "@/components/perfil/field";
+
+const UMBRAL_AVISO_DIAS = 30;
 
 const CATEGORIAS_DOC: DocumentoRepositorio["categoria"][] = [
   "Legal",
@@ -110,31 +113,36 @@ export function DocumentosCard() {
         {proveedor.documentosRepositorio.length === 0 ? (
           <p className="text-sm text-slate-400">Aún no agregaste documentos.</p>
         ) : (
-          proveedor.documentosRepositorio.map((doc) => (
-            <div
-              key={doc.id}
-              className="flex items-center justify-between rounded-lg border border-[var(--border)] px-3 py-2 text-sm"
-            >
-              <div>
-                <span className="text-slate-700">{doc.nombre}</span>
-                <span className="ml-2 text-xs text-slate-400">{doc.categoria}</span>
+          proveedor.documentosRepositorio.map((doc) => {
+            const dias = doc.fechaVigencia ? diasRestantes(doc.fechaVigencia) : null;
+            const porVencer = dias !== null && dias <= UMBRAL_AVISO_DIAS;
+            return (
+              <div
+                key={doc.id}
+                className={`flex items-center justify-between rounded-lg border border-[var(--border)] px-3 py-2 text-sm ${porVencer ? estiloVigencia(dias) : ""}`}
+              >
+                <div>
+                  <span className="text-slate-700">{doc.nombre}</span>
+                  <span className="ml-2 text-xs text-slate-400">{doc.categoria}</span>
+                </div>
+                <div className="flex items-center gap-3">
+                  {doc.fechaVigencia && (
+                    <span className={`text-xs ${porVencer ? `font-medium ${textoVigencia(dias)}` : "text-slate-400"}`}>
+                      Vigencia: {formatFecha(doc.fechaVigencia)}
+                      {porVencer && ` · ${etiquetaVigencia(dias)}`}
+                    </span>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => eliminar(doc.id)}
+                    className="text-xs font-medium text-slate-400 hover:text-red-600"
+                  >
+                    Eliminar
+                  </button>
+                </div>
               </div>
-              <div className="flex items-center gap-3">
-                {doc.fechaVigencia && (
-                  <span className="text-xs text-slate-400">
-                    Vigencia: {formatFecha(doc.fechaVigencia)}
-                  </span>
-                )}
-                <button
-                  type="button"
-                  onClick={() => eliminar(doc.id)}
-                  className="text-xs font-medium text-slate-400 hover:text-red-600"
-                >
-                  Eliminar
-                </button>
-              </div>
-            </div>
-          ))
+            );
+          })
         )}
       </CardBody>
     </Card>
