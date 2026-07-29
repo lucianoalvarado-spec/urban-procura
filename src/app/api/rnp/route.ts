@@ -1,4 +1,6 @@
 import { NextRequest } from "next/server";
+import { clienteIp, rateLimit, respuestaLimiteExcedido } from "@/lib/rate-limit";
+import { esRucValido } from "@/lib/validation";
 
 // Proxy server-to-server hacia el RNP del OSCE (ver docs/prompt-claude-code-urban-procura.md,
 // sección 3). Confirmado en esta sesión:
@@ -51,11 +53,13 @@ function parseCapacidad(texto: string | null): number | null {
   return Number.isFinite(numero) ? numero : null;
 }
 
-function esRucValido(ruc: string): boolean {
-  return /^\d{11}$/.test(ruc);
-}
+const LIMITE = 20;
+const VENTANA_MS = 5 * 60 * 1000;
 
 export async function GET(request: NextRequest) {
+  const limite = rateLimit(`rnp:${clienteIp(request)}`, LIMITE, VENTANA_MS);
+  if (!limite.ok) return respuestaLimiteExcedido(limite);
+
   const ruc = request.nextUrl.searchParams.get("ruc")?.trim() ?? "";
 
   if (!esRucValido(ruc)) {

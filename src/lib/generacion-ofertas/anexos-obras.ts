@@ -252,8 +252,10 @@ function anexo9(d: DatosOfertaObras): AnexoGenerado {
   };
 }
 
+const LIMITE_EXPERIENCIA_TABLA = 20;
+
 function anexo11(d: DatosOfertaObras): AnexoGenerado {
-  const filas = d.experienciaObras.map((e, i) => [
+  const filas = d.experienciaObras.slice(0, LIMITE_EXPERIENCIA_TABLA).map((e, i) => [
     String(i + 1),
     e.cliente,
     e.especialidad,

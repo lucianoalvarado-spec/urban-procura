@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useId, useMemo, useState } from "react";
 import type { EntidadSugerida, EntidadesBuscarResultado } from "@/app/api/entidades/buscar/route";
 
 const LIMITE_SUGERENCIAS_ENTIDAD = 20;
@@ -23,6 +23,7 @@ export function EntitySelect({
   placeholder?: string;
   sugerenciasLocales?: string[];
 }) {
+  const inputId = useId();
   const [abierto, setAbierto] = useState(false);
   const [texto, setTexto] = useState("");
   const [sugerenciasCatalogo, setSugerenciasCatalogo] = useState<EntidadSugerida[] | null>(null);
@@ -77,8 +78,9 @@ export function EntitySelect({
 
   return (
     <div className="relative flex flex-col gap-1 text-xs font-medium text-slate-500">
-      {label}
+      <label htmlFor={inputId}>{label}</label>
       <input
+        id={inputId}
         type="text"
         value={abierto ? texto : value}
         placeholder={placeholder}

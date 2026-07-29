@@ -1,5 +1,7 @@
 import { NextRequest } from "next/server";
 import type { Categoria } from "@/lib/data/types";
+import { clienteIp, rateLimit, respuestaLimiteExcedido } from "@/lib/rate-limit";
+import { esRucValido } from "@/lib/validation";
 
 // Segunda parte de la integración RNP/SEACE (ver src/app/api/rnp/route.ts para el
 // perfil general). Esta trae el historial de contratos "Publicada en el SEACE" que
@@ -87,11 +89,15 @@ function mapCategoria(desCatObj2: string): Categoria {
   return "Servicios";
 }
 
-function esRucValido(ruc: string): boolean {
-  return /^\d{11}$/.test(ruc);
-}
+// Límite más estricto que /api/rnp: cada request acá dispara hasta LIMITE_CONTRATOS
+// fetches en paralelo al OSCE, así que el factor de amplificación es mayor.
+const LIMITE = 10;
+const VENTANA_MS = 5 * 60 * 1000;
 
 export async function GET(request: NextRequest) {
+  const limite = rateLimit(`rnp-experiencia:${clienteIp(request)}`, LIMITE, VENTANA_MS);
+  if (!limite.ok) return respuestaLimiteExcedido(limite);
+
   const ruc = request.nextUrl.searchParams.get("ruc")?.trim() ?? "";
 
   if (!esRucValido(ruc)) {

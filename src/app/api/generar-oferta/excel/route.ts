@@ -1,6 +1,7 @@
 import { NextRequest } from "next/server";
 import ExcelJS from "exceljs";
 import type { AnexoGenerado } from "@/lib/generacion-ofertas/anexos-obras";
+import { clienteIp, rateLimit, respuestaLimiteExcedido } from "@/lib/rate-limit";
 
 export const preferredRegion = "gru1";
 export const maxDuration = 30;
@@ -10,7 +11,13 @@ interface ProcesoResumen {
   entidad: string;
 }
 
+const LIMITE = 20;
+const VENTANA_MS = 5 * 60 * 1000;
+
 export async function POST(request: NextRequest) {
+  const limite = rateLimit(`generar-oferta-excel:${clienteIp(request)}`, LIMITE, VENTANA_MS);
+  if (!limite.ok) return respuestaLimiteExcedido(limite);
+
   const body = (await request.json().catch(() => null)) as {
     anexos?: AnexoGenerado[];
     proceso?: ProcesoResumen;

@@ -1,5 +1,7 @@
 import { NextRequest } from "next/server";
 import type { Categoria } from "@/lib/data/types";
+import { clienteIp, rateLimit, respuestaLimiteExcedido } from "@/lib/rate-limit";
+import { esRucValido } from "@/lib/validation";
 
 // Tercera parte de la integración RNP/SEACE (ver src/app/api/rnp/route.ts para el
 // perfil general y src/app/api/rnp/experiencia/route.ts para los contratos "Publicada
@@ -81,10 +83,6 @@ export interface ExperienciaObrasResultado {
   mensaje: string;
 }
 
-function esRucValido(ruc: string): boolean {
-  return /^\d{11}$/.test(ruc);
-}
-
 function extraerRnp(pathName: string, ruc: string): string | null {
   const m = pathName.match(new RegExp(`^/RNP/Proveedores/${ruc}/(\\d+)\\s`));
   return m ? m[1] : null;
@@ -100,7 +98,15 @@ async function buscarPorTipo(ruc: string, t: 1 | 2): Promise<{ hits: number; obr
   return { hits: data.searchInfo?.hitsAll ?? 0, obras: data.listaObras ?? [] };
 }
 
+// Cada request acá dispara 2 búsquedas + hasta LIMITE_OBRAS*2 fetches de detalle en
+// paralelo al OSCE, el mayor factor de amplificación de las tres rutas de RNP.
+const LIMITE = 10;
+const VENTANA_MS = 5 * 60 * 1000;
+
 export async function GET(request: NextRequest) {
+  const limite = rateLimit(`rnp-obras:${clienteIp(request)}`, LIMITE, VENTANA_MS);
+  if (!limite.ok) return respuestaLimiteExcedido(limite);
+
   const ruc = request.nextUrl.searchParams.get("ruc")?.trim() ?? "";
 
   if (!esRucValido(ruc)) {

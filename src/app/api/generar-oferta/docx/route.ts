@@ -1,9 +1,13 @@
 import { NextRequest } from "next/server";
 import { Document, HeadingLevel, Packer, Paragraph, TextRun } from "docx";
 import type { BorradorOferta } from "@/app/api/generar-oferta/route";
+import { clienteIp, rateLimit, respuestaLimiteExcedido } from "@/lib/rate-limit";
 
 export const preferredRegion = "gru1";
 export const maxDuration = 30;
+
+const LIMITE = 20;
+const VENTANA_MS = 5 * 60 * 1000;
 
 interface ProcesoResumen {
   objeto: string;
@@ -26,6 +30,9 @@ function listaOParrafo(items: string[], vacioTexto: string): Paragraph[] {
 }
 
 export async function POST(request: NextRequest) {
+  const limite = rateLimit(`generar-oferta-docx:${clienteIp(request)}`, LIMITE, VENTANA_MS);
+  if (!limite.ok) return respuestaLimiteExcedido(limite);
+
   const body = (await request.json().catch(() => null)) as {
     borrador?: BorradorOferta;
     proceso?: ProcesoResumen;

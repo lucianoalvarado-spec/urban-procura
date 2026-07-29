@@ -10,6 +10,7 @@ import { Card, CardBody, CardHeader } from "@/components/ui/card";
 import { TextField, NumberField, SelectField, CheckboxField } from "@/components/perfil/field";
 import type { ContratoImportable, ExperienciaOsceResultado } from "@/app/api/rnp/experiencia/route";
 import type { ObraImportable, ExperienciaObrasResultado } from "@/app/api/rnp/obras/route";
+import { esRucValido } from "@/lib/validation";
 
 const VACIO = {
   cliente: "",
@@ -22,10 +23,6 @@ const VACIO = {
   contratoAdjunto: false,
   conformidadAdjunta: false,
 };
-
-function esRucValido(ruc: string): boolean {
-  return /^\d{11}$/.test(ruc);
-}
 
 export function ExperienciaCard() {
   const { proveedor, actualizarDatosEmpresa } = useProveedor();

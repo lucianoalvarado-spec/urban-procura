@@ -1,4 +1,5 @@
 import { NextRequest } from "next/server";
+import { clienteIp, rateLimit, respuestaLimiteExcedido } from "@/lib/rate-limit";
 
 // Análisis de bases con IA — vía la API de Claude (Anthropic Messages API), llamada
 // server-to-server porque necesita ANTHROPIC_API_KEY (nunca debe llegar al navegador).
@@ -11,6 +12,11 @@ export const maxDuration = 60;
 const ANTHROPIC_URL = "https://api.anthropic.com/v1/messages";
 const MODEL = "claude-sonnet-5";
 const MIN_CARACTERES = 200;
+// Sin tope, alguien podría pegar textos enormes repetidamente y disparar el costo de
+// la API de Claude — 50,000 caracteres alcanza de sobra para unas bases completas.
+const MAX_CARACTERES = 50_000;
+const LIMITE = 8;
+const VENTANA_MS = 10 * 60 * 1000;
 
 export interface AnalisisBasesResultado {
   disponible: boolean;
@@ -58,6 +64,9 @@ function extraerJson(texto: string): Record<string, unknown> | null {
 }
 
 export async function POST(request: NextRequest) {
+  const limite = rateLimit(`analisis-bases:${clienteIp(request)}`, LIMITE, VENTANA_MS);
+  if (!limite.ok) return respuestaLimiteExcedido(limite);
+
   const apiKey = process.env.ANTHROPIC_API_KEY;
   if (!apiKey) {
     const resultado: AnalisisBasesResultado = {
@@ -77,6 +86,14 @@ export async function POST(request: NextRequest) {
     const resultado: AnalisisBasesResultado = {
       disponible: false,
       mensaje: `Pega o sube un texto más largo (al menos ${MIN_CARACTERES} caracteres) — parece que faltan las bases completas.`,
+    };
+    return Response.json(resultado, { status: 400 });
+  }
+
+  if (texto.length > MAX_CARACTERES) {
+    const resultado: AnalisisBasesResultado = {
+      disponible: false,
+      mensaje: `El texto es demasiado largo (máximo ${MAX_CARACTERES.toLocaleString("es-PE")} caracteres) — recorta las bases antes de analizarlas.`,
     };
     return Response.json(resultado, { status: 400 });
   }

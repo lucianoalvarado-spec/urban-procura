@@ -74,6 +74,7 @@ export function AdjuntosField({
           ref={inputRef}
           type="file"
           multiple
+          aria-label={label}
           className="hidden"
           onChange={(e) => adjuntar(e.target.files)}
         />

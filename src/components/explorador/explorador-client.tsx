@@ -396,17 +396,18 @@ function AlertaBellButton({
   vigilado: boolean;
   habilitado: boolean;
 }) {
+  const etiqueta = !habilitado
+    ? "Disponible desde el plan Profesional"
+    : vigilado
+      ? "Quitar alerta de este proceso"
+      : "Agregar alerta — te avisamos en Alertas si cambia la fecha o el plazo está por vencer";
+
   return (
     <button
       type="button"
       disabled={!habilitado}
-      title={
-        !habilitado
-          ? "Disponible desde el plan Profesional"
-          : vigilado
-            ? "Quitar alerta de este proceso"
-            : "Agregar alerta — te avisamos en Alertas si cambia la fecha o el plazo está por vencer"
-      }
+      title={etiqueta}
+      aria-label={etiqueta}
       onClick={() =>
         vigilado
           ? quitarVigilancia(proceso.id)
@@ -443,19 +444,20 @@ function ComparadorPlusButton({
   habilitado: boolean;
 }) {
   const bloqueado = !habilitado || (!seleccionado && lleno);
+  const etiqueta = !habilitado
+    ? "Disponible desde el plan Profesional"
+    : seleccionado
+      ? "Quitar del comparador"
+      : lleno
+        ? `Ya tienes ${MAX_COMPARADOS} procesos en el comparador`
+        : "Comparar proceso";
+
   return (
     <button
       type="button"
       disabled={bloqueado}
-      title={
-        !habilitado
-          ? "Disponible desde el plan Profesional"
-          : seleccionado
-            ? "Quitar del comparador"
-            : lleno
-              ? `Ya tienes ${MAX_COMPARADOS} procesos en el comparador`
-              : "Comparar Proceso"
-      }
+      title={etiqueta}
+      aria-label={etiqueta}
       onClick={() => (seleccionado ? quitarDeComparador(proceso.id) : agregarAComparador(proceso))}
       className={cn(
         "rounded-lg border px-2.5 py-1.5 text-sm font-semibold leading-none",

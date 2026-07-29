@@ -1,4 +1,5 @@
 import { NextRequest } from "next/server";
+import { clienteIp, rateLimit, respuestaLimiteExcedido } from "@/lib/rate-limit";
 
 // Catálogo real de entidades compradoras del Portal de Contrataciones Abiertas del OECE
 // — distinto de `/search` (que lista PROCESOS): este es un directorio de las ~3,316
@@ -62,7 +63,14 @@ export interface EntidadesBuscarResultado {
   entidades: EntidadSugerida[];
 }
 
+// Límite generoso: uso normal es tipeo con debounce (varias requests por búsqueda).
+const LIMITE = 60;
+const VENTANA_MS = 60 * 1000;
+
 export async function GET(request: NextRequest) {
+  const limite = rateLimit(`entidades-buscar:${clienteIp(request)}`, LIMITE, VENTANA_MS);
+  if (!limite.ok) return respuestaLimiteExcedido(limite);
+
   const q = request.nextUrl.searchParams.get("q")?.trim() ?? "";
 
   if (!q) {

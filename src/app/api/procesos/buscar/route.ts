@@ -1,6 +1,7 @@
 import { NextRequest } from "next/server";
 import { buscarProcesosLive } from "@/lib/data/live/oece";
-import type { Categoria } from "@/lib/data/types";
+import { CATEGORIAS } from "@/lib/data/constants";
+import { clienteIp, rateLimit, respuestaLimiteExcedido } from "@/lib/rate-limit";
 
 // El batch inicial del Explorador (`listProcesos()`) trae un lote fijo (ver
 // src/app/(app)/explorador/page.tsx) y todos los filtros de esa pantalla —incluida
@@ -24,12 +25,17 @@ import type { Categoria } from "@/lib/data/types";
 export const preferredRegion = "gru1";
 export const maxDuration = 30;
 
-const CATEGORIAS_VALIDAS: Categoria[] = ["Obra", "Bienes", "Servicios", "Consultoría de Obras"];
+// Límite generoso: uso normal es tipeo con debounce (varias requests por búsqueda).
+const LIMITE = 60;
+const VENTANA_MS = 60 * 1000;
 
 export async function GET(request: NextRequest) {
+  const limite = rateLimit(`procesos-buscar:${clienteIp(request)}`, LIMITE, VENTANA_MS);
+  if (!limite.ok) return respuestaLimiteExcedido(limite);
+
   const search = request.nextUrl.searchParams.get("search")?.trim() ?? "";
   const categoriaParam = request.nextUrl.searchParams.get("categoria");
-  const categoria = CATEGORIAS_VALIDAS.find((c) => c === categoriaParam);
+  const categoria = CATEGORIAS.find((c) => c === categoriaParam);
   const paginateByParam = Number(request.nextUrl.searchParams.get("paginateBy"));
   const paginateBy = Number.isFinite(paginateByParam) && paginateByParam > 0
     ? Math.min(paginateByParam, 100)

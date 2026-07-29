@@ -1,5 +1,6 @@
 import { NextRequest } from "next/server";
 import type { AnalisisBasesResultado } from "@/app/api/analisis-bases/route";
+import { clienteIp, rateLimit, respuestaLimiteExcedido } from "@/lib/rate-limit";
 
 // Genera el borrador de la oferta técnica. A diferencia de /api/analisis-bases, esta
 // ruta SIEMPRE devuelve un borrador usable (armado con plantilla a partir del perfil
@@ -109,7 +110,15 @@ function extraerJson(texto: string): Record<string, unknown> | null {
   }
 }
 
+// Limita a 8 generaciones cada 10 minutos por IP: esta ruta llama a la API de pago
+// de Claude, así que sin tope alguien podría scriptear costo ilimitado en la cuenta.
+const LIMITE = 8;
+const VENTANA_MS = 10 * 60 * 1000;
+
 export async function POST(request: NextRequest) {
+  const limite = rateLimit(`generar-oferta:${clienteIp(request)}`, LIMITE, VENTANA_MS);
+  if (!limite.ok) return respuestaLimiteExcedido(limite);
+
   const body = (await request.json().catch(() => null)) as {
     proceso?: ProcesoResumen;
     proveedor?: ProveedorResumen;

@@ -14,13 +14,13 @@
 
   --brand-50: #fbeae3;
   --brand-100: #f5d1c2;
-  --brand-500: #e2571f;
-  --brand-600: #e2571f; /* orange */
-  --brand-700: #b8410f; /* orange-dark */
+  --brand-500: #e2571f; /* naranja base — solo para bordes/acentos grandes, NO para texto chico (3.74:1, falla WCAG AA) */
+  --brand-600: #b8410f; /* orange — botones/enlaces/texto: 5.53:1 sobre blanco, pasa AA */
+  --brand-700: #8a3009; /* orange-dark, para estados hover sobre --brand-600 */
 
   --match-alto: #2f6b45;
   --match-alto-bg: #e1eee4;
-  --match-medio: #9a6b0c;
+  --match-medio: #7d5608; /* antes #9a6b0c, medía 3.99:1 sobre su fondo — falla WCAG AA */
   --match-medio-bg: #f5ecd8;
   --match-bajo: #5b6b72;
   --match-bajo-bg: #e7e9e6;

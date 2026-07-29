@@ -9,13 +9,10 @@ import { setPlan } from "@/lib/state/plan-store";
 import { setDatosEmpresa } from "@/lib/state/empresa-store";
 import { crearRnpVacio, type PlanComercial } from "@/lib/data/types";
 import type { RnpResultado } from "@/app/api/rnp/route";
+import { esRucValido } from "@/lib/validation";
 
 function esPlanValido(value: string | null): value is PlanComercial {
   return PLANES.some((plan) => plan.id === value);
-}
-
-function esRucValido(value: string): boolean {
-  return /^\d{11}$/.test(value);
 }
 
 function esCorreoValido(value: string): boolean {

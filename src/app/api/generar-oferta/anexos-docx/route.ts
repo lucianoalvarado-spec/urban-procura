@@ -1,9 +1,13 @@
 import { NextRequest } from "next/server";
 import { Document, HeadingLevel, Packer, Paragraph, Table, TableCell, TableRow, TextRun, WidthType } from "docx";
 import type { AnexoGenerado } from "@/lib/generacion-ofertas/anexos-obras";
+import { clienteIp, rateLimit, respuestaLimiteExcedido } from "@/lib/rate-limit";
 
 export const preferredRegion = "gru1";
 export const maxDuration = 30;
+
+const LIMITE = 20;
+const VENTANA_MS = 5 * 60 * 1000;
 
 interface ProcesoResumen {
   objeto: string;
@@ -36,6 +40,9 @@ function tablaAnexo(tabla: NonNullable<AnexoGenerado["tabla"]>): Table {
 }
 
 export async function POST(request: NextRequest) {
+  const limite = rateLimit(`generar-oferta-anexos-docx:${clienteIp(request)}`, LIMITE, VENTANA_MS);
+  if (!limite.ok) return respuestaLimiteExcedido(limite);
+
   const body = (await request.json().catch(() => null)) as {
     anexos?: AnexoGenerado[];
     proceso?: ProcesoResumen;
