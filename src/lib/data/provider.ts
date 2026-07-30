@@ -10,10 +10,14 @@ import {
   obtenerProcesoLive,
   obtenerProcesosActivosPorRegionLive,
   obtenerProcesosPorRegionLive,
+  obtenerTopProveedoresHistoricoLive,
   rankingCompetidoresLive,
   type AdjudicacionResumen,
   type EstadisticasOece,
+  type TopProveedorHistorico,
 } from "@/lib/data/live/oece";
+
+export type { TopProveedorHistorico };
 
 // Capa de datos como adaptador reemplazable (ver docs/prompt-claude-code-urban-procura.md, sección 3).
 //
@@ -168,4 +172,12 @@ export async function obtenerHistorialEntidad(entidad: string): Promise<Adjudica
       a.entidad.toUpperCase().includes(entidad.toUpperCase())
     ),
   };
+}
+
+// Igual patrón sin fallback mock que obtenerProcesosPorRegion/obtenerEstadisticas: es
+// una cifra institucional real (top histórico de proveedores por monto contratado
+// acumulado, calculado por el propio portal), no procesos de muestra — si la fuente
+// falla, la vista "Top histórico" del Ranking simplemente no se renderiza.
+export async function obtenerTopProveedoresHistorico(): Promise<TopProveedorHistorico[] | null> {
+  return obtenerTopProveedoresHistoricoLive();
 }

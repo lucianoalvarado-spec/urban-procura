@@ -720,3 +720,63 @@ export async function obtenerProcesosActivosPorRegionLive(): Promise<
     return null;
   }
 }
+
+export interface TopProveedorHistorico {
+  nombre: string;
+  ruc: string;
+  totalContratado: number;
+}
+
+interface OceTop10Item {
+  amount?: number;
+  value?: string;
+  name?: string;
+}
+
+interface OceTop10Response {
+  data?: OceTop10Item[];
+}
+
+// El Tablero de Contratos del propio portal usa este endpoint para su "Top 10
+// proveedores adjudicados con contratos con mayor monto contratado" — confirmado con
+// curl que hace la agregación por monto server-side (PLUSPETROL NORTE, PETROPERU,
+// BPZ EXPLORACIÓN encabezan la lista real, consistente con ser las mayores
+// multinacionales de petróleo/telecomunicaciones del país por monto contratado). Se
+// prefiere sobre paginar /api/v1/suppliers y ordenar client-side: se probó esa
+// alternativa y el orden por defecto de /suppliers no tiene relación con el monto (ni
+// con ni sin order_total_contracts=desc, que se ignora en silencio igual que
+// category=), así que una página arbitraria de 1000 sobre 497,783 no garantizaría
+// capturar el verdadero top 10. Sin año: "histórico completo", que es el valor de esta
+// vista frente al ranking por categoría existente (que sí es reciente pero solo
+// muestra ~20 candidatos).
+export async function obtenerTopProveedoresHistoricoLive(): Promise<
+  TopProveedorHistorico[] | null
+> {
+  try {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 15000);
+    const res = await fetch(`${BASE_URL}/contractsSuppliersTop10Dashboard?format=json`, {
+      headers: oeceHeaders(),
+      signal: controller.signal,
+      next: { revalidate: 21600 },
+    });
+    clearTimeout(timeout);
+    if (!res.ok) return null;
+
+    const data = (await res.json()) as OceTop10Response;
+    const items = (data.data ?? [])
+      .filter(
+        (item): item is Required<Pick<OceTop10Item, "name" | "value" | "amount">> =>
+          Boolean(item.name && item.value && typeof item.amount === "number")
+      )
+      .map((item) => ({
+        nombre: item.name,
+        ruc: item.value.replace(/^PE-RUC-/, ""),
+        totalContratado: item.amount,
+      }));
+
+    return items.length > 0 ? items : null;
+  } catch {
+    return null;
+  }
+}
