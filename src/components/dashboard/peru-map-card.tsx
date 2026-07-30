@@ -5,10 +5,10 @@ import { PERU_REGIONES_SVG, PERU_MAPA_VIEWBOX } from "@/lib/data/peru-map";
 import type { Region } from "@/lib/data/types";
 import { Card, CardBody, CardHeader } from "@/components/ui/card";
 
-// Escala en 5 baldes por ranking (no por valor lineal): Lima concentra ~1.19M de los
-// ~2.7M de procesos históricos del país, así que una escala lineal dejaría casi todo el
-// mapa en blanco. Por ranking, el color siempre se reparte visiblemente sin importar
-// cuán desigual sea la distribución real.
+// Escala en 5 baldes por ranking (no por valor lineal): la actividad de contratación
+// pública en Perú sigue muy concentrada en Lima, así que una escala lineal dejaría casi
+// todo el mapa en blanco. Por ranking, el color siempre se reparte visiblemente sin
+// importar cuán desigual sea la distribución real.
 const ESCALA_COLOR = [
   "#eef2ff", // brand-50
   "#e0e7ff", // brand-100
@@ -50,7 +50,7 @@ export function PeruMapCard({ datos }: { datos: Partial<Record<Region, number>> 
     <Card>
       <CardHeader
         title="Procesos de contratación por región"
-        subtitle="Histórico OECE (todos los años) por región de la entidad convocante"
+        subtitle="Procesos convocados este año (muestra) por región de la entidad convocante"
         action={
           <div className="flex items-center gap-2">
             {OPCIONES_VISTA.map((opcion) => (
@@ -103,7 +103,7 @@ export function PeruMapCard({ datos }: { datos: Partial<Record<Region, number>> 
                     <title>
                       {`${region}${
                         datos[region] !== undefined
-                          ? `: ${formatMiles(datos[region] as number)} procesos`
+                          ? `: ${formatMiles(datos[region] as number)} procesos este año`
                           : ": sin datos"
                       }`}
                     </title>
@@ -118,7 +118,7 @@ export function PeruMapCard({ datos }: { datos: Partial<Record<Region, number>> 
                     <p className="mt-1 text-2xl font-semibold text-[var(--brand-600)]">
                       {datos[seleccion] !== undefined ? formatMiles(datos[seleccion] as number) : "—"}
                     </p>
-                    <p className="text-xs text-slate-500">procesos de contratación históricos</p>
+                    <p className="text-xs text-slate-500">procesos convocados este año (muestra)</p>
                   </div>
                 ) : (
                   <p className="text-xs text-slate-400">
@@ -136,8 +136,10 @@ export function PeruMapCard({ datos }: { datos: Partial<Record<Region, number>> 
                 </div>
 
                 <p className="text-xs text-slate-400">
-                  Calculado sumando el histórico de procesos por entidad (catálogo de ~3,316
-                  entidades del OECE), agrupado por el departamento registrado de cada una.
+                  Estimado a partir de una muestra de ~5,000 procesos convocados este año en el
+                  Portal de Contrataciones Abiertas del OECE, cruzados contra el catálogo de
+                  ~3,316 entidades por su departamento registrado. Al ser una muestra, regiones
+                  con poca actividad podrían aparecer con un número algo menor al real.
                 </p>
               </div>
             </div>
