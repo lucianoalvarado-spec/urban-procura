@@ -3,6 +3,7 @@
 import { useMemo } from "react";
 import Link from "next/link";
 import type { Proceso, Region } from "@/lib/data/types";
+import type { ProcedimientoTop } from "@/lib/data/provider";
 import { useProveedor } from "@/lib/state/proveedor-context";
 import { useCrm } from "@/lib/state/crm-context";
 import { computeMatch } from "@/lib/data/matching";
@@ -19,9 +20,11 @@ const LIMITE_PLAN_FREE = 2;
 export function DashboardClient({
   procesos,
   procesosPorRegion,
+  procedimientosTop5,
 }: {
   procesos: Proceso[];
   procesosPorRegion: Partial<Record<Region, number>> | null;
+  procedimientosTop5: ProcedimientoTop[] | null;
 }) {
   const { proveedor } = useProveedor();
   const { estados } = useCrm();
@@ -109,6 +112,25 @@ export function DashboardClient({
       </div>
 
       <PeruMapCard datos={procesosPorRegion} />
+
+      {procedimientosTop5 && procedimientosTop5.length > 0 && (
+        <Card>
+          <CardHeader
+            title="Procedimientos más usados este año"
+            subtitle="Contexto: con qué tipo de procedimiento te vas a encontrar más seguido"
+          />
+          <CardBody className="space-y-2">
+            {procedimientosTop5.map((p) => (
+              <div key={p.nombre} className="flex items-center justify-between gap-3 text-sm">
+                <span className="text-slate-600">{p.nombre}</span>
+                <span className="font-medium text-[var(--foreground)]">
+                  {p.cantidad.toLocaleString("es-PE")}
+                </span>
+              </div>
+            ))}
+          </CardBody>
+        </Card>
+      )}
 
       {puedeMatchCrm ? (
         <Card>

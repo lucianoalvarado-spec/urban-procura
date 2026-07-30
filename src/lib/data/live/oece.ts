@@ -908,3 +908,50 @@ export async function obtenerIndicadoresLive(anio: number): Promise<IndicadoresO
     return null;
   }
 }
+
+export interface ProcedimientoTop {
+  nombre: string;
+  cantidad: number;
+}
+
+interface OceProcedimientoTop10Item {
+  count?: number;
+  name?: string;
+}
+
+interface OceProcedimientoTop10Response {
+  data?: OceProcedimientoTop10Item[];
+}
+
+// Mismo endpoint que ya usa internamente el Tablero de Procesos de Contratación del
+// propio portal para su "Top 10 cantidad de procesos de contratación por tipo de
+// procedimiento" — se queda solo con los primeros 5, acotado por año.
+export async function obtenerProcedimientosTop5Live(anio: number): Promise<ProcedimientoTop[] | null> {
+  try {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 15000);
+    const res = await fetch(
+      `${BASE_URL}/recordsProcurementTop10Dashboard?year=${anio}&format=json`,
+      {
+        headers: oeceHeaders(),
+        signal: controller.signal,
+        next: { revalidate: 21600 },
+      }
+    );
+    clearTimeout(timeout);
+    if (!res.ok) return null;
+
+    const data = (await res.json()) as OceProcedimientoTop10Response;
+    const items = (data.data ?? [])
+      .filter(
+        (item): item is Required<Pick<OceProcedimientoTop10Item, "name" | "count">> =>
+          Boolean(item.name && typeof item.count === "number")
+      )
+      .slice(0, 5)
+      .map((item) => ({ nombre: item.name, cantidad: item.count }));
+
+    return items.length > 0 ? items : null;
+  } catch {
+    return null;
+  }
+}

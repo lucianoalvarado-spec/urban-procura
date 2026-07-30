@@ -9,6 +9,7 @@ import {
   obtenerEstadisticasLive,
   obtenerIndicadoresLive,
   obtenerPerfilEntidadLive,
+  obtenerProcedimientosTop5Live,
   obtenerProcesoLive,
   obtenerProcesosActivosPorRegionLive,
   obtenerProcesosPorRegionLive,
@@ -18,10 +19,11 @@ import {
   type EstadisticasOece,
   type IndicadoresOece,
   type PerfilEntidadOece,
+  type ProcedimientoTop,
   type TopProveedorHistorico,
 } from "@/lib/data/live/oece";
 
-export type { IndicadoresOece, PerfilEntidadOece, TopProveedorHistorico };
+export type { IndicadoresOece, PerfilEntidadOece, ProcedimientoTop, TopProveedorHistorico };
 
 // Capa de datos como adaptador reemplazable (ver docs/prompt-claude-code-urban-procura.md, sección 3).
 //
@@ -198,4 +200,11 @@ export async function obtenerPerfilEntidad(entidad: string): Promise<PerfilEntid
 // falla, la sección de indicadores del Landing simplemente no se renderiza.
 export async function obtenerIndicadores(): Promise<IndicadoresOece | null> {
   return obtenerIndicadoresLive(new Date().getFullYear());
+}
+
+// Igual patrón sin fallback mock: es una cifra institucional real del año en curso
+// (top 5 de procedimientos más usados) — si la fuente falla, la card del Dashboard
+// simplemente no se renderiza.
+export async function obtenerProcedimientosTop5(): Promise<ProcedimientoTop[] | null> {
+  return obtenerProcedimientosTop5Live(new Date().getFullYear());
 }
