@@ -21,9 +21,11 @@ import { clienteIp, rateLimit, respuestaLimiteExcedido } from "@/lib/rate-limit"
 // gru1 (São Paulo) + maxDuration extendido: esta ruta corre como su propia función
 // serverless (llamada por fetch del cliente), no hereda la config de explorador/page.tsx —
 // sin esto corría en la región default de Vercel y podía quedarse sin tiempo antes de
-// que el fetch de 15s a buscarProcesosLive terminara.
+// que el fetch de 15s a buscarProcesosLive terminara. 45 en vez de 30: buscarProcesosLive
+// ahora enriquece las primeras 15 tarjetas con un fetch de detalle adicional cada una en
+// paralelo después del fetch de /search — el peor caso suma hasta 30s entre ambos pasos.
 export const preferredRegion = "gru1";
-export const maxDuration = 30;
+export const maxDuration = 45;
 
 // Límite generoso: uso normal es tipeo con debounce (varias requests por búsqueda).
 const LIMITE = 60;

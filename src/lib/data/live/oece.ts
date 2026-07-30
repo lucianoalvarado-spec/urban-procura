@@ -359,6 +359,17 @@ const CATEGORIA_A_OCDS: Record<Categoria, string | undefined> = {
   "Consultoría de Obras": undefined, // no existe como categoría OCDS propia en esta fuente
 };
 
+// Cuántas de las primeras tarjetas de cada lote se enriquecen con la región real
+// (pidiendo el detalle completo, /record/{ocid}, la misma función que ya usa la
+// Ficha) — el resumen de /search no trae dirección estructurada. Acotado a 15 porque
+// pedir el detalle de las 60 tarjetas del lote sería lento y pesado; 15 cubre de sobra
+// el límite de 5 del plan Free y la porción de pantalla sin scroll del resto de
+// planes. Se decidió NO enriquecer también fechaLimitePresentacion/documentos en el
+// mismo paso: mezclar una fecha límite precisa en las primeras 15 tarjetas con la
+// fecha-proxy en el resto de la misma lista sería inconsistente y confuso — solo se
+// reemplaza `region`.
+const LIMITE_ENRIQUECIMIENTO_REGION = 15;
+
 export async function buscarProcesosLive(params: BusquedaLiveParams = {}): Promise<Proceso[] | null> {
   try {
     const url = new URL(`${BASE_URL}/search`);
@@ -385,7 +396,17 @@ export async function buscarProcesosLive(params: BusquedaLiveParams = {}): Promi
       .map(resumenAProceso)
       .filter((p): p is Proceso => p !== null);
 
-    return procesos.length > 0 ? procesos : null;
+    if (procesos.length === 0) return null;
+
+    const aEnriquecer = procesos.slice(0, LIMITE_ENRIQUECIMIENTO_REGION);
+    const detalles = await Promise.allSettled(aEnriquecer.map((p) => obtenerProcesoLive(p.id)));
+    detalles.forEach((detalle, i) => {
+      if (detalle.status === "fulfilled" && detalle.value) {
+        aEnriquecer[i].region = detalle.value.region;
+      }
+    });
+
+    return procesos;
   } catch {
     return null;
   }
