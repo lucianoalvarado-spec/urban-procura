@@ -576,6 +576,17 @@ interface OceBuyersResponse {
 // Es una llamada pesada para pedirla en cada carga del Dashboard, así que se cachea
 // (revalidate) en vez de no-store como el resto de este archivo — estos totales no
 // cambian de un minuto a otro.
+// No existe un endpoint oficial "procesos por región" (revisamos el tablero de
+// Procesos de Contratación del propio portal — sus filtros son entidad/año/mes/
+// sistema/categoría/procedimiento/etapa, sin región). Lo calculamos nosotros: cada
+// entidad en /api/v1/buyers trae `total_processes` (histórico, todos los años) y
+// `party.address.department` — sumamos el primero agrupado por el segundo. Confirmado
+// con curl que el campo coincide con la columna "Procesos" que el propio portal
+// muestra en /entidades para esa misma entidad.
+// El catálogo completo son 3,316 entidades; con paginateBy=1000 son solo 4 páginas.
+// Es una llamada pesada para pedirla en cada carga del Dashboard, así que se cachea
+// (revalidate) en vez de no-store como el resto de este archivo — estos totales no
+// cambian de un minuto a otro.
 function fetchBuyersPage(page: number): Promise<OceBuyersResponse | null> {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 15000);
@@ -588,23 +599,32 @@ function fetchBuyersPage(page: number): Promise<OceBuyersResponse | null> {
     .finally(() => clearTimeout(timeout));
 }
 
+// Catálogo completo de entidades (3,316, en 4 páginas de 1000) — compartido por el
+// mapa histórico (obtenerProcesosPorRegionLive) y el mapa activo
+// (obtenerProcesosActivosPorRegionLive, ver más abajo), ambos necesitan el mismo cruce
+// entidad→departamento y no tiene sentido pedirlo dos veces por separado.
+async function fetchTodosBuyers(): Promise<OceBuyerResumen[] | null> {
+  const dataPrimera = await fetchBuyersPage(1);
+  if (!dataPrimera) return null;
+  const totalPaginas = dataPrimera.pagination?.num_pages ?? 1;
+
+  const resto = await Promise.all(
+    Array.from({ length: totalPaginas - 1 }, (_, i) => fetchBuyersPage(i + 2))
+  );
+
+  return [dataPrimera, ...resto].flatMap((pagina) => pagina?.results ?? []);
+}
+
 export async function obtenerProcesosPorRegionLive(): Promise<Partial<Record<Region, number>> | null> {
   try {
-    const dataPrimera = await fetchBuyersPage(1);
-    if (!dataPrimera) return null;
-    const totalPaginas = dataPrimera.pagination?.num_pages ?? 1;
-
-    const resto = await Promise.all(
-      Array.from({ length: totalPaginas - 1 }, (_, i) => fetchBuyersPage(i + 2))
-    );
+    const buyers = await fetchTodosBuyers();
+    if (!buyers) return null;
 
     const acumulado: Partial<Record<Region, number>> = {};
-    for (const pagina of [dataPrimera, ...resto]) {
-      for (const buyer of pagina?.results ?? []) {
-        const region = mapDepartamento(buyer.party?.address?.department);
-        if (region === "Otro") continue;
-        acumulado[region] = (acumulado[region] ?? 0) + (buyer.total_processes ?? 0);
-      }
+    for (const buyer of buyers) {
+      const region = mapDepartamento(buyer.party?.address?.department);
+      if (region === "Otro") continue;
+      acumulado[region] = (acumulado[region] ?? 0) + (buyer.total_processes ?? 0);
     }
     return Object.keys(acumulado).length > 0 ? acumulado : null;
   } catch {
