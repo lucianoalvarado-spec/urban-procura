@@ -20,7 +20,11 @@ export function AnalisisBasesCard({ proceso }: { proceso: Proceso }) {
   // oece.ts) — la muestra mock usa "Bases integradas" con url "#..." a propósito, así
   // que nunca activa el modo automático (comportamiento esperado, no un bug).
   const docBases = proceso.documentos.find(
-    (d) => d.tipo === "Bases" && d.disponible && d.url.startsWith("http")
+    (d) =>
+      d.tipo === "Bases" &&
+      d.disponible &&
+      d.url.startsWith("http") &&
+      d.formato?.toLowerCase() === "pdf"
   );
   const [modo, setModo] = useState<"auto" | "manual">(docBases ? "auto" : "manual");
   const [texto, setTexto] = useState("");

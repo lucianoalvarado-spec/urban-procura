@@ -94,19 +94,35 @@ type DescargaPdf =
   | { ok: true; base64: string }
   | { ok: false; motivo: "muy_pesado" | "no_disponible" };
 
+const PDF_MAGIC = Buffer.from("%PDF-");
+
 async function descargarPdfBase64(docUrl: string): Promise<DescargaPdf> {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 15000);
   try {
-    const res = await fetch(docUrl, { signal: controller.signal });
-    if (!res.ok) return { ok: false, motivo: "no_disponible" };
+    // redirect: "manual" — docUrl es client-supplied (validado solo contra el
+    // allowlist de hostname seace.gob.pe). Si algún endpoint de *.seace.gob.pe tuviera
+    // un open redirect, seguirlo automáticamente descargaría y reenviaría al cliente el
+    // contenido de un host arbitrario (SSRF con canal de exfiltración). Cualquier
+    // respuesta de redirección se trata igual que un fallo de descarga.
+    const res = await fetch(docUrl, { signal: controller.signal, redirect: "manual" });
+    if (!res.ok || (res.status >= 300 && res.status < 400) || res.type === "opaqueredirect") {
+      return { ok: false, motivo: "no_disponible" };
+    }
     const contentLength = res.headers.get("content-length");
     if (contentLength && Number(contentLength) > MAX_PDF_BYTES) {
       return { ok: false, motivo: "muy_pesado" };
     }
     const buffer = await res.arrayBuffer();
     if (buffer.byteLength > MAX_PDF_BYTES) return { ok: false, motivo: "muy_pesado" };
-    return { ok: true, base64: Buffer.from(buffer).toString("base64") };
+    // Segunda línea de defensa además del chequeo de `format` en la UI (Fix A): verifica
+    // los magic bytes reales antes de tratarlo como PDF válido — cubre también un valor
+    // de `format` desactualizado o incorrecto en la fuente.
+    const bytes = Buffer.from(buffer);
+    if (!bytes.subarray(0, 5).equals(PDF_MAGIC)) {
+      return { ok: false, motivo: "no_disponible" };
+    }
+    return { ok: true, base64: bytes.toString("base64") };
   } catch {
     return { ok: false, motivo: "no_disponible" };
   } finally {
@@ -223,7 +239,7 @@ export async function POST(request: NextRequest) {
       },
       body: JSON.stringify({
         model: MODEL,
-        max_tokens: 2000,
+        max_tokens: 8000,
         system: PROMPT_SISTEMA,
         messages: [{ role: "user", content }],
       }),
@@ -239,8 +255,21 @@ export async function POST(request: NextRequest) {
       return Response.json(resultado);
     }
 
-    const data = (await res.json()) as { content?: { type: string; text?: string }[] };
+    const data = (await res.json()) as {
+      content?: { type: string; text?: string }[];
+      stop_reason?: string;
+    };
     const textoRespuesta = data.content?.find((c) => c.type === "text")?.text ?? "";
+
+    if (data.stop_reason === "max_tokens") {
+      const resultado: AnalisisBasesResultado = {
+        disponible: false,
+        mensaje:
+          "El análisis quedó incompleto porque el documento es muy extenso — intenta con el modo de texto manual, recortando a la sección más relevante.",
+      };
+      return Response.json(resultado);
+    }
+
     const parsed = extraerJson(textoRespuesta);
 
     if (!parsed) {

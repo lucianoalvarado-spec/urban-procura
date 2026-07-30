@@ -50,7 +50,7 @@ export function PeruMapCard({ datos }: { datos: Partial<Record<Region, number>> 
     <Card>
       <CardHeader
         title="Procesos de contratación por región"
-        subtitle="Procesos convocados este año (muestra) por región de la entidad convocante"
+        subtitle="Actividad reciente (muestra) por región de la entidad convocante"
         action={
           <div className="flex items-center gap-2">
             {OPCIONES_VISTA.map((opcion) => (
@@ -103,7 +103,7 @@ export function PeruMapCard({ datos }: { datos: Partial<Record<Region, number>> 
                     <title>
                       {`${region}${
                         datos[region] !== undefined
-                          ? `: ${formatMiles(datos[region] as number)} procesos este año`
+                          ? `: ${formatMiles(datos[region] as number)} procesos recientes`
                           : ": sin datos"
                       }`}
                     </title>
@@ -118,7 +118,7 @@ export function PeruMapCard({ datos }: { datos: Partial<Record<Region, number>> 
                     <p className="mt-1 text-2xl font-semibold text-[var(--brand-600)]">
                       {datos[seleccion] !== undefined ? formatMiles(datos[seleccion] as number) : "—"}
                     </p>
-                    <p className="text-xs text-slate-500">procesos convocados este año (muestra)</p>
+                    <p className="text-xs text-slate-500">procesos convocados recientemente (muestra)</p>
                   </div>
                 ) : (
                   <p className="text-xs text-slate-400">
@@ -136,10 +136,12 @@ export function PeruMapCard({ datos }: { datos: Partial<Record<Region, number>> 
                 </div>
 
                 <p className="text-xs text-slate-400">
-                  Estimado a partir de una muestra de ~5,000 procesos convocados este año en el
-                  Portal de Contrataciones Abiertas del OECE, cruzados contra el catálogo de
-                  ~3,316 entidades por su departamento registrado. Al ser una muestra, regiones
-                  con poca actividad podrían aparecer con un número algo menor al real.
+                  Estimado a partir de una muestra de los ~5,000 procesos más recientes
+                  publicados en el Portal de Contrataciones Abiertas del OECE, cruzados contra
+                  el catálogo de ~3,316 entidades por su departamento registrado. Al ser una
+                  muestra basada en actualidad (no un corte anual), refleja actividad de corto
+                  plazo, no el total del año — y regiones con poca actividad podrían además
+                  aparecer con un número algo menor al real.
                 </p>
               </div>
             </div>

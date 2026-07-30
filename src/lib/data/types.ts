@@ -63,6 +63,11 @@ export interface DocumentoProceso {
   tipo: string;
   disponible: boolean;
   url: string;
+  /** Formato real del archivo (ej. "pdf", "zip", "docx", "rar"), tal como lo reporta el
+   * OECE — opcional porque los fixtures mock no lo setean (nunca lo necesitan: su `tipo`
+   * es "Bases integradas", no "Bases", así que nunca activan el botón de análisis
+   * automático). Case no garantizado por la fuente — comparar en minúsculas. */
+  formato?: string;
 }
 
 export interface EtapaCronograma {

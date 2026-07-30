@@ -252,12 +252,14 @@ function releaseADetalleProceso(release: OceReleaseDetalle): Proceso | null {
     tipo: TIPO_DOC_LABEL[d.documentType ?? ""] ?? d.title ?? "Documento",
     disponible: true,
     url: d.url ?? "",
+    formato: d.format,
   }));
   const documentosAward = (release.awards ?? []).flatMap((a) =>
     (a.documents ?? []).map((d) => ({
       tipo: TIPO_DOC_LABEL[d.documentType ?? ""] ?? d.title ?? "Documento de buena pro",
       disponible: true,
       url: d.url ?? "",
+      formato: d.format,
     }))
   );
   const documentosContrato = (release.contracts ?? []).flatMap((c) =>
@@ -265,6 +267,7 @@ function releaseADetalleProceso(release: OceReleaseDetalle): Proceso | null {
       tipo: TIPO_DOC_LABEL[d.documentType ?? ""] ?? d.title ?? "Contrato",
       disponible: true,
       url: d.url ?? "",
+      formato: d.format,
     }))
   );
 
@@ -641,7 +644,7 @@ function fetchMuestraActivaPage(page: number, anio: number): Promise<OceBusqueda
   const timeout = setTimeout(() => controller.abort(), 15000);
   const url = new URL(`${BASE_URL}/search`);
   url.searchParams.set("page", String(page));
-  url.searchParams.set("paginateBy", "1000");
+  url.searchParams.set("paginateBy", "250");
   url.searchParams.set("format", "json");
   url.searchParams.set("year", String(anio));
   return fetch(url.toString(), {
@@ -653,16 +656,26 @@ function fetchMuestraActivaPage(page: number, anio: number): Promise<OceBusqueda
     .finally(() => clearTimeout(timeout));
 }
 
-// "Activo" = procesos convocados este año, no "con plazo genuinamente abierto ahora
-// mismo" (esa alternativa no es viable barata: tender.status casi nunca viene poblado
-// en /search — ver spec docs/superpowers/specs/2026-07-29-...). No existe un endpoint
-// que dé "procesos por región de este año" directo, así que tomamos una muestra de
-// /search?year=<actual> (5 páginas × paginateBy=1000 = 5,000 de un total de ~42,000 ese
-// año — balance velocidad/representatividad) y cruzamos el nombre de la entidad
-// compradora de cada resultado contra el mismo catálogo de /buyers que ya usa el mapa
-// histórico (fetchTodosBuyers). Es una muestra, no el conteo exacto — se documenta en
-// el tooltip/subtítulo del mapa (ver peru-map-card.tsx).
-const PAGINAS_MUESTRA_ACTIVA = 5;
+// "Activo" = procesos convocados recientemente, no "con plazo genuinamente abierto
+// ahora mismo" (esa alternativa no es viable barata: tender.status casi nunca viene
+// poblado en /search — ver spec docs/superpowers/specs/2026-07-29-...). No existe un
+// endpoint que dé "procesos por región de este año" directo, así que tomamos una
+// muestra de /search?year=<actual> (20 páginas × paginateBy=250 = 5,000 de un total de
+// ~42,000 ese año). IMPORTANTE: verificado contra la API real que el OECE devuelve los
+// resultados en orden fijo (aparentemente recency-first dentro del índice), así que
+// estas 20 páginas cubren en la práctica solo las ~3 semanas más recientes de
+// convocatorias, NO una muestra representativa del año completo — cada región queda
+// aprox. en 1/8 de su cifra anual real. Por eso el mapa se rotula como "actividad
+// reciente", no "este año" (ver peru-map-card.tsx). Aumentar la cobertura a año
+// completo requeriría ~43 páginas y excede el presupuesto de tiempo — fuera de alcance.
+// paginateBy=250 (en vez de 1000) mantiene cada página bajo el límite de 2MB de la
+// fetch cache de Next.js, para que `revalidate: 21600` sí aplique (con 1000 cada página
+// pesa ~2.64MB y Next descarta el cacheo en silencio) — mismo total de muestra (5,000),
+// solo cambia la granularidad de página. Cruzamos el nombre de la entidad compradora de
+// cada resultado contra el mismo catálogo de /buyers que ya usa el mapa histórico
+// (fetchTodosBuyers). Es una muestra, no el conteo exacto — se documenta en el
+// tooltip/subtítulo del mapa.
+const PAGINAS_MUESTRA_ACTIVA = 20;
 
 export async function obtenerProcesosActivosPorRegionLive(): Promise<
   Partial<Record<Region, number>> | null
@@ -676,6 +689,12 @@ export async function obtenerProcesosActivosPorRegionLive(): Promise<
       ),
     ]);
     if (!buyers) return null;
+    // Nunca renderizar números "seguros" construidos con solo una parte de la muestra
+    // intentada — si 1-4 de las PAGINAS_MUESTRA_ACTIVA fallaron (timeout/no-ok, más
+    // probable en producción por pasar por el relay local/Cloudflare Tunnel), es
+    // preferible no mostrar el mapa a mostrar un conteo confiablemente incompleto sin
+    // avisar (mismo principio de "nunca degradar en silencio" que fetchTodosBuyers).
+    if (paginasMuestra.some((pagina) => pagina === null)) return null;
 
     const regionPorEntidad = new Map<string, Region>();
     for (const buyer of buyers) {
