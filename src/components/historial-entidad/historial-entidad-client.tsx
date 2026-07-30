@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import type { AdjudicacionesResultado } from "@/lib/data/provider";
+import type { AdjudicacionesResultado, PerfilEntidadOece } from "@/lib/data/provider";
 import { formatFecha, formatMonto } from "@/lib/format";
 import { useProveedor } from "@/lib/state/proveedor-context";
 import { cumplePlan } from "@/lib/plan";
@@ -9,10 +9,14 @@ import { Card, CardBody } from "@/components/ui/card";
 import { UpgradeNotice } from "@/components/plan/upgrade-notice";
 import { EntitySelect } from "@/components/shared/entity-select";
 
+interface HistorialEntidadResponse extends AdjudicacionesResultado {
+  perfilEntidad: PerfilEntidadOece | null;
+}
+
 export function HistorialEntidadClient() {
   const { proveedor } = useProveedor();
   const [entidad, setEntidad] = useState("");
-  const [resultado, setResultado] = useState<AdjudicacionesResultado | null>(null);
+  const [resultado, setResultado] = useState<HistorialEntidadResponse | null>(null);
   const [cargando, setCargando] = useState(false);
 
   useEffect(() => {
@@ -24,7 +28,7 @@ export function HistorialEntidadClient() {
     setCargando(true);
     fetch(`/api/historial-entidad?entidad=${encodeURIComponent(entidad)}`)
       .then((r) => r.json())
-      .then((data: AdjudicacionesResultado) => {
+      .then((data: HistorialEntidadResponse) => {
         if (!cancelado) setResultado(data);
       })
       .finally(() => {
@@ -68,6 +72,51 @@ export function HistorialEntidadClient() {
         <Card>
           <CardBody>
             <p className="text-sm text-slate-500">Elige una entidad para ver su historial.</p>
+          </CardBody>
+        </Card>
+      )}
+
+      {entidad && resultado?.perfilEntidad && (
+        <Card>
+          <CardBody className="grid gap-4 sm:grid-cols-3">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                Monto histórico contratado
+              </p>
+              <p className="mt-1 text-lg font-semibold text-[var(--foreground)]">
+                {formatMonto(resultado.perfilEntidad.totalContratado)}
+              </p>
+            </div>
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                Último proceso publicado
+              </p>
+              <p className="mt-1 text-sm text-slate-600">
+                {resultado.perfilEntidad.ultimoProceso
+                  ? formatFecha(resultado.perfilEntidad.ultimoProceso)
+                  : "No disponible"}
+              </p>
+            </div>
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Contacto</p>
+              <p className="mt-1 text-sm text-slate-600">
+                {resultado.perfilEntidad.telefono ?? "Teléfono no publicado"}
+              </p>
+              {resultado.perfilEntidad.web && (
+                <a
+                  href={
+                    resultado.perfilEntidad.web.startsWith("http")
+                      ? resultado.perfilEntidad.web
+                      : `https://${resultado.perfilEntidad.web}`
+                  }
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="mt-0.5 block text-xs text-[var(--brand-600)] underline"
+                >
+                  {resultado.perfilEntidad.web}
+                </a>
+              )}
+            </div>
           </CardBody>
         </Card>
       )}
