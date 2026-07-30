@@ -603,17 +603,6 @@ interface OceBuyersResponse {
 // Es una llamada pesada para pedirla en cada carga del Dashboard, así que se cachea
 // (revalidate) en vez de no-store como el resto de este archivo — estos totales no
 // cambian de un minuto a otro.
-// No existe un endpoint oficial "procesos por región" (revisamos el tablero de
-// Procesos de Contratación del propio portal — sus filtros son entidad/año/mes/
-// sistema/categoría/procedimiento/etapa, sin región). Lo calculamos nosotros: cada
-// entidad en /api/v1/buyers trae `total_processes` (histórico, todos los años) y
-// `party.address.department` — sumamos el primero agrupado por el segundo. Confirmado
-// con curl que el campo coincide con la columna "Procesos" que el propio portal
-// muestra en /entidades para esa misma entidad.
-// El catálogo completo son 3,316 entidades; con paginateBy=1000 son solo 4 páginas.
-// Es una llamada pesada para pedirla en cada carga del Dashboard, así que se cachea
-// (revalidate) en vez de no-store como el resto de este archivo — estos totales no
-// cambian de un minuto a otro.
 function fetchBuyersPage(page: number): Promise<OceBuyersResponse | null> {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 15000);
@@ -806,11 +795,14 @@ export async function obtenerTopProveedoresHistoricoLive(): Promise<
 }
 
 export interface PerfilEntidadOece {
-  totalContratado: number;
+  totalContratado: number | null;
   ultimoProceso: string | null;
   telefono: string | null;
   web: string | null;
-  direccion: string | null;
+}
+
+function normalizarEspacios(texto: string): string {
+  return texto.trim().replace(/\s+/g, " ");
 }
 
 // Mismo endpoint que ya usa el mapa del Dashboard (/buyers), con el param `buyer=`
@@ -818,11 +810,18 @@ export interface PerfilEntidadOece {
 // CLAUDE.md) para traer el registro de una sola entidad. Los campos total_contracts,
 // last_process y party.contactPoint ya viajaban en esa misma respuesta y se
 // descartaban al mapear para el mapa — no hace falta ningún endpoint nuevo.
+// `buyer=` es un substring match, no un match exacto (confirmado contra la fuente real):
+// para entidades que son también prefijo de texto de otras (ej. "MINISTERIO DE
+// TRANSPORTES Y COMUNICACIONES" vs. su unidad ejecutora de Trujillo), tomar
+// `results[0]` a ciegas puede atribuir los datos de otra entidad a la buscada. Por eso
+// pedimos hasta 50 candidatos y resolvemos al que tenga `party.name` exactamente igual
+// (normalizando espacios) al término buscado; si ninguno matchea, devolvemos null en
+// vez de adivinar con un substring.
 export async function obtenerPerfilEntidadLive(entidad: string): Promise<PerfilEntidadOece | null> {
   try {
     const url = new URL(`${BASE_URL}/buyers`);
     url.searchParams.set("buyer", entidad);
-    url.searchParams.set("paginateBy", "1");
+    url.searchParams.set("paginateBy", "50");
     url.searchParams.set("format", "json");
 
     const controller = new AbortController();
@@ -836,19 +835,17 @@ export async function obtenerPerfilEntidadLive(entidad: string): Promise<PerfilE
     if (!res.ok) return null;
 
     const data = (await res.json()) as OceBuyersResponse;
-    const buyer = data.results?.[0];
+    const nombreBuscado = normalizarEspacios(entidad).toUpperCase();
+    const buyer = (data.results ?? []).find(
+      (r) => r.party?.name && normalizarEspacios(r.party.name).toUpperCase() === nombreBuscado
+    );
     if (!buyer) return null;
 
-    const direccionPartes = [buyer.party?.address?.streetAddress, buyer.party?.address?.locality]
-      .filter((parte): parte is string => Boolean(parte))
-      .join(", ");
-
     return {
-      totalContratado: buyer.total_contracts ?? 0,
+      totalContratado: buyer.total_contracts ?? null,
       ultimoProceso: buyer.last_process ?? null,
       telefono: buyer.party?.contactPoint?.telephone ?? null,
       web: buyer.party?.contactPoint?.url ?? null,
-      direccion: direccionPartes.length > 0 ? direccionPartes : null,
     };
   } catch {
     return null;
