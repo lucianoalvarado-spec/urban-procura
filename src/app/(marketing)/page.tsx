@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { PLANES } from "@/lib/plan";
-import { obtenerEstadisticas } from "@/lib/data/provider";
+import { obtenerEstadisticas, obtenerIndicadores } from "@/lib/data/provider";
 
 export const preferredRegion = "gru1";
 export const maxDuration = 30;
@@ -25,7 +25,33 @@ const FEATURES = [
 ];
 
 export default async function LandingPage() {
-  const estadisticas = await obtenerEstadisticas();
+  const [estadisticas, indicadores] = await Promise.all([
+    obtenerEstadisticas(),
+    obtenerIndicadores(),
+  ]);
+
+  const stats: { valor: number; etiqueta: string; sufijo?: string }[] = [];
+  if (estadisticas) {
+    stats.push(
+      { valor: estadisticas.procesos, etiqueta: "Procesos de contratación" },
+      { valor: estadisticas.entidades, etiqueta: "Entidades compradoras" },
+      { valor: estadisticas.proveedores, etiqueta: "Proveedores adjudicados" },
+      { valor: estadisticas.contratos, etiqueta: "Contratos" }
+    );
+  }
+  if (indicadores) {
+    stats.push(
+      {
+        valor: indicadores.diasPromedioAdjudicacion,
+        etiqueta: "Días promedio hasta la adjudicación",
+        sufijo: " días",
+      },
+      {
+        valor: indicadores.ofertasPromedioParaGanar,
+        etiqueta: "Ofertas promedio para ganar una adjudicación",
+      }
+    );
+  }
 
   return (
     <div>
@@ -57,35 +83,33 @@ export default async function LandingPage() {
         </div>
       </section>
 
-      {estadisticas && (
+      {stats.length > 0 && (
         <section className="mx-auto max-w-6xl px-4 pb-16 md:px-6">
-          <div className="grid grid-cols-2 gap-6 rounded-xl border border-[var(--border)] bg-[var(--surface)] p-8 sm:grid-cols-4">
-            {[
-              { valor: estadisticas.procesos, etiqueta: "Procesos de contratación" },
-              { valor: estadisticas.entidades, etiqueta: "Entidades compradoras" },
-              { valor: estadisticas.proveedores, etiqueta: "Proveedores adjudicados" },
-              { valor: estadisticas.contratos, etiqueta: "Contratos" },
-            ].map((stat) => (
+          <div className="grid grid-cols-2 gap-6 rounded-xl border border-[var(--border)] bg-[var(--surface)] p-8 sm:grid-cols-3">
+            {stats.map((stat) => (
               <div key={stat.etiqueta} className="text-center">
                 <p className="text-3xl font-bold text-[var(--foreground)] md:text-4xl">
                   {stat.valor.toLocaleString("es-PE")}
+                  {stat.sufijo ?? ""}
                 </p>
                 <p className="mt-1 text-sm text-slate-600">{stat.etiqueta}</p>
               </div>
             ))}
           </div>
-          <p className="mt-3 text-center text-xs text-slate-400">
-            Datos en vivo del{" "}
-            <a
-              href="https://contratacionesabiertas.oece.gob.pe/"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="underline"
-            >
-              Portal de Contrataciones Abiertas del OECE
-            </a>{" "}
-            (SEACE V2 y V3) en el año {estadisticas.anio}.
-          </p>
+          {estadisticas && (
+            <p className="mt-3 text-center text-xs text-slate-400">
+              Datos en vivo del{" "}
+              <a
+                href="https://contratacionesabiertas.oece.gob.pe/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="underline"
+              >
+                Portal de Contrataciones Abiertas del OECE
+              </a>{" "}
+              (SEACE V2 y V3) en el año {estadisticas.anio}.
+            </p>
+          )}
         </section>
       )}
 

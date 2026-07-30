@@ -7,6 +7,7 @@ import {
   esIdProcesoLive,
   historialEntidadLive,
   obtenerEstadisticasLive,
+  obtenerIndicadoresLive,
   obtenerPerfilEntidadLive,
   obtenerProcesoLive,
   obtenerProcesosActivosPorRegionLive,
@@ -15,11 +16,12 @@ import {
   rankingCompetidoresLive,
   type AdjudicacionResumen,
   type EstadisticasOece,
+  type IndicadoresOece,
   type PerfilEntidadOece,
   type TopProveedorHistorico,
 } from "@/lib/data/live/oece";
 
-export type { PerfilEntidadOece, TopProveedorHistorico };
+export type { IndicadoresOece, PerfilEntidadOece, TopProveedorHistorico };
 
 // Capa de datos como adaptador reemplazable (ver docs/prompt-claude-code-urban-procura.md, sección 3).
 //
@@ -189,4 +191,11 @@ export async function obtenerTopProveedoresHistorico(): Promise<TopProveedorHist
 // muestra — si la fuente falla, la tarjeta de perfil simplemente no se renderiza.
 export async function obtenerPerfilEntidad(entidad: string): Promise<PerfilEntidadOece | null> {
   return obtenerPerfilEntidadLive(entidad);
+}
+
+// Igual patrón sin fallback mock: son cifras institucionales reales del año en curso
+// (días promedio hasta la adjudicación, ofertas promedio para ganar) — si la fuente
+// falla, la sección de indicadores del Landing simplemente no se renderiza.
+export async function obtenerIndicadores(): Promise<IndicadoresOece | null> {
+  return obtenerIndicadoresLive(new Date().getFullYear());
 }

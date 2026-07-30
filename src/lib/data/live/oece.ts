@@ -854,3 +854,57 @@ export async function obtenerPerfilEntidadLive(entidad: string): Promise<PerfilE
     return null;
   }
 }
+
+export interface IndicadoresOece {
+  diasPromedioAdjudicacion: number;
+  ofertasPromedioParaGanar: number;
+}
+
+interface OceIndicadorDuracion {
+  data?: { tenderEndToAwardDays?: number };
+}
+
+interface OceIndicadorProveedores {
+  data?: { tenderersAVG?: number };
+}
+
+// Ambos endpoints alimentan el Tablero de Indicadores del propio portal y aceptan
+// year= igual que el resto de la familia de endpoints de tableros (confirmado con
+// curl: indicatorProcessDurationAVG?year=2026 e indicatorCountSuppliersOneMultiple?year=2026
+// devuelven valores distintos entre sí y respecto al histórico total). Se usa
+// tenderEndToAwardDays, NO awardToContractStartDays: ese segundo campo mide de
+// adjudicación a inicio de contrato, una etapa posterior a "hasta la adjudicación"
+// (error encontrado y corregido durante el diseño — ver spec).
+export async function obtenerIndicadoresLive(anio: number): Promise<IndicadoresOece | null> {
+  try {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 15000);
+    const [resDuracion, resProveedores] = await Promise.all([
+      fetch(`${BASE_URL}/indicatorProcessDurationAVG?year=${anio}&format=json`, {
+        headers: oeceHeaders(),
+        signal: controller.signal,
+        next: { revalidate: 21600 },
+      }),
+      fetch(`${BASE_URL}/indicatorCountSuppliersOneMultiple?year=${anio}&format=json`, {
+        headers: oeceHeaders(),
+        signal: controller.signal,
+        next: { revalidate: 21600 },
+      }),
+    ]);
+    clearTimeout(timeout);
+    if (!resDuracion.ok || !resProveedores.ok) return null;
+
+    const dataDuracion = (await resDuracion.json()) as OceIndicadorDuracion;
+    const dataProveedores = (await resProveedores.json()) as OceIndicadorProveedores;
+    const dias = dataDuracion.data?.tenderEndToAwardDays;
+    const ofertas = dataProveedores.data?.tenderersAVG;
+    if (typeof dias !== "number" || typeof ofertas !== "number") return null;
+
+    return {
+      diasPromedioAdjudicacion: Math.round(dias),
+      ofertasPromedioParaGanar: Math.round(ofertas * 10) / 10,
+    };
+  } catch {
+    return null;
+  }
+}
