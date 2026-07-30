@@ -67,7 +67,7 @@ Alcance deliberadamente acotado: el enriquecimiento **solo reemplaza `region`**,
 Se investigaron los 3 tableros del portal. Ninguno tiene desglose por región (ya documentado). Se seleccionaron 2 adiciones, cada una con un rol distinto:
 
 **Landing (`(marketing)/page.tsx`, visitante sin cuenta)** — el rol de esta sección ya es "generar confianza antes de registrarse" (el grid de 4 contadores existente). Se agregan 2 indicadores nuevos al mismo grid, mismo año actual, mismo patrón sin fallback mock:
-- "Días promedio hasta la adjudicación" (`indicatorProcessDurationAVG.awardToContractStartDays`, ~21-25 días según el año)
+- "Días promedio hasta la adjudicación" (`indicatorProcessDurationAVG.tenderEndToAwardDays` — **corrección**: se había anotado inicialmente `awardToContractStartDays`, pero ese campo mide de adjudicación a inicio de contrato, una etapa posterior; el que corresponde a "hasta la adjudicación" es `tenderEndToAwardDays`, ~27-34 días según el año, confirmado con curl)
 - "Ofertas promedio para ganar una adjudicación" (`indicatorCountSuppliersOneMultiple.tenderersAVG`, ~3-5 según el año)
 
 Verificado con curl que ambos endpoints aceptan `year=` igual que el resto de la familia `recordsXDashboard`/`indicatorX` (`indicatorProcessDurationAVG?year=2026` y `indicatorCountSuppliersOneMultiple?year=2026` devuelven valores distintos entre sí y respecto al histórico total, confirmando que el filtro aplica de verdad). Estos dos números son ganchos de marketing genuinos: le dicen a un proveedor potencial, antes de crear una cuenta, qué tan rápido se resuelve un proceso típico y qué tan reñida está la competencia.
