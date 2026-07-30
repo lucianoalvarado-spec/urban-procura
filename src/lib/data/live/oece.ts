@@ -631,3 +631,73 @@ export async function obtenerProcesosPorRegionLive(): Promise<Partial<Record<Reg
     return null;
   }
 }
+
+function normalizarNombreEntidad(nombre: string): string {
+  return quitarAcentos(nombre).trim().toUpperCase();
+}
+
+function fetchMuestraActivaPage(page: number, anio: number): Promise<OceBusquedaResponse | null> {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 15000);
+  const url = new URL(`${BASE_URL}/search`);
+  url.searchParams.set("page", String(page));
+  url.searchParams.set("paginateBy", "1000");
+  url.searchParams.set("format", "json");
+  url.searchParams.set("year", String(anio));
+  return fetch(url.toString(), {
+    headers: oeceHeaders(),
+    signal: controller.signal,
+    next: { revalidate: 21600 },
+  })
+    .then((r) => (r.ok ? (r.json() as Promise<OceBusquedaResponse>) : null))
+    .finally(() => clearTimeout(timeout));
+}
+
+// "Activo" = procesos convocados este año, no "con plazo genuinamente abierto ahora
+// mismo" (esa alternativa no es viable barata: tender.status casi nunca viene poblado
+// en /search — ver spec docs/superpowers/specs/2026-07-29-...). No existe un endpoint
+// que dé "procesos por región de este año" directo, así que tomamos una muestra de
+// /search?year=<actual> (5 páginas × paginateBy=1000 = 5,000 de un total de ~42,000 ese
+// año — balance velocidad/representatividad) y cruzamos el nombre de la entidad
+// compradora de cada resultado contra el mismo catálogo de /buyers que ya usa el mapa
+// histórico (fetchTodosBuyers). Es una muestra, no el conteo exacto — se documenta en
+// el tooltip/subtítulo del mapa (ver peru-map-card.tsx).
+const PAGINAS_MUESTRA_ACTIVA = 5;
+
+export async function obtenerProcesosActivosPorRegionLive(): Promise<
+  Partial<Record<Region, number>> | null
+> {
+  try {
+    const anio = new Date().getFullYear();
+    const [buyers, ...paginasMuestra] = await Promise.all([
+      fetchTodosBuyers(),
+      ...Array.from({ length: PAGINAS_MUESTRA_ACTIVA }, (_, i) =>
+        fetchMuestraActivaPage(i + 1, anio)
+      ),
+    ]);
+    if (!buyers) return null;
+
+    const regionPorEntidad = new Map<string, Region>();
+    for (const buyer of buyers) {
+      const nombre = buyer.party?.name;
+      const region = mapDepartamento(buyer.party?.address?.department);
+      if (!nombre || region === "Otro") continue;
+      regionPorEntidad.set(normalizarNombreEntidad(nombre), region);
+    }
+
+    const acumulado: Partial<Record<Region, number>> = {};
+    for (const pagina of paginasMuestra) {
+      for (const item of pagina?.results ?? []) {
+        const nombreEntidad =
+          item.compiledRelease?.buyer?.name || item.compiledRelease?.tender?.procuringEntity?.name;
+        if (!nombreEntidad) continue;
+        const region = regionPorEntidad.get(normalizarNombreEntidad(nombreEntidad));
+        if (!region) continue;
+        acumulado[region] = (acumulado[region] ?? 0) + 1;
+      }
+    }
+    return Object.keys(acumulado).length > 0 ? acumulado : null;
+  } catch {
+    return null;
+  }
+}

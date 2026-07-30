@@ -8,6 +8,7 @@ import {
   historialEntidadLive,
   obtenerEstadisticasLive,
   obtenerProcesoLive,
+  obtenerProcesosActivosPorRegionLive,
   obtenerProcesosPorRegionLive,
   rankingCompetidoresLive,
   type AdjudicacionResumen,
@@ -124,6 +125,15 @@ export async function obtenerEstadisticas(): Promise<EstadisticasOece | null> {
 // mapa del Dashboard debe indicarlo, no inventar números por región.
 export async function obtenerProcesosPorRegion(): Promise<Partial<Record<Region, number>> | null> {
   return obtenerProcesosPorRegionLive();
+}
+
+// "Activo" = procesos convocados este año (muestra) — reemplaza al histórico como
+// dataset por defecto del mapa del Dashboard (ver dashboard/page.tsx). Mismo patrón sin
+// fallback mock que obtenerProcesosPorRegion/obtenerEstadisticas: son cifras
+// institucionales reales, no procesos de muestra — si la fuente falla, el mapa lo
+// indica en vez de inventar un número.
+export async function obtenerProcesosActivosPorRegion(): Promise<Partial<Record<Region, number>> | null> {
+  return obtenerProcesosActivosPorRegionLive();
 }
 
 export interface AdjudicacionesResultado {
