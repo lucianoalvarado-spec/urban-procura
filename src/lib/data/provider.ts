@@ -7,6 +7,7 @@ import {
   esIdProcesoLive,
   historialEntidadLive,
   obtenerEstadisticasLive,
+  obtenerPerfilEntidadLive,
   obtenerProcesoLive,
   obtenerProcesosActivosPorRegionLive,
   obtenerProcesosPorRegionLive,
@@ -14,10 +15,11 @@ import {
   rankingCompetidoresLive,
   type AdjudicacionResumen,
   type EstadisticasOece,
+  type PerfilEntidadOece,
   type TopProveedorHistorico,
 } from "@/lib/data/live/oece";
 
-export type { TopProveedorHistorico };
+export type { PerfilEntidadOece, TopProveedorHistorico };
 
 // Capa de datos como adaptador reemplazable (ver docs/prompt-claude-code-urban-procura.md, sección 3).
 //
@@ -180,4 +182,11 @@ export async function obtenerHistorialEntidad(entidad: string): Promise<Adjudica
 // falla, la vista "Top histórico" del Ranking simplemente no se renderiza.
 export async function obtenerTopProveedoresHistorico(): Promise<TopProveedorHistorico[] | null> {
   return obtenerTopProveedoresHistoricoLive();
+}
+
+// Igual patrón sin fallback mock: es una cifra institucional real (perfil de la
+// entidad — monto histórico contratado, último proceso, contacto), no procesos de
+// muestra — si la fuente falla, la tarjeta de perfil simplemente no se renderiza.
+export async function obtenerPerfilEntidad(entidad: string): Promise<PerfilEntidadOece | null> {
+  return obtenerPerfilEntidadLive(entidad);
 }

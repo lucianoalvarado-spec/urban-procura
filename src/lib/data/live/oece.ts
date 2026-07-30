@@ -576,12 +576,15 @@ export async function obtenerEstadisticasLive(): Promise<EstadisticasOece | null
 
 interface OceBuyerParty {
   name?: string;
-  address?: { department?: string };
+  address?: { department?: string; streetAddress?: string; locality?: string };
+  contactPoint?: { telephone?: string; url?: string };
 }
 
 interface OceBuyerResumen {
   party?: OceBuyerParty;
   total_processes?: number;
+  total_contracts?: number;
+  last_process?: string;
 }
 
 interface OceBuyersResponse {
@@ -797,6 +800,56 @@ export async function obtenerTopProveedoresHistoricoLive(): Promise<
       }));
 
     return items.length > 0 ? items : null;
+  } catch {
+    return null;
+  }
+}
+
+export interface PerfilEntidadOece {
+  totalContratado: number;
+  ultimoProceso: string | null;
+  telefono: string | null;
+  web: string | null;
+  direccion: string | null;
+}
+
+// Mismo endpoint que ya usa el mapa del Dashboard (/buyers), con el param `buyer=`
+// (búsqueda por nombre, ya confirmado funcionando — ver Quinta integración en
+// CLAUDE.md) para traer el registro de una sola entidad. Los campos total_contracts,
+// last_process y party.contactPoint ya viajaban en esa misma respuesta y se
+// descartaban al mapear para el mapa — no hace falta ningún endpoint nuevo.
+export async function obtenerPerfilEntidadLive(entidad: string): Promise<PerfilEntidadOece | null> {
+  try {
+    const url = new URL(`${BASE_URL}/buyers`);
+    url.searchParams.set("buyer", entidad);
+    url.searchParams.set("paginateBy", "1");
+    url.searchParams.set("format", "json");
+
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 15000);
+    const res = await fetch(url.toString(), {
+      headers: oeceHeaders(),
+      signal: controller.signal,
+      cache: "no-store",
+    });
+    clearTimeout(timeout);
+    if (!res.ok) return null;
+
+    const data = (await res.json()) as OceBuyersResponse;
+    const buyer = data.results?.[0];
+    if (!buyer) return null;
+
+    const direccionPartes = [buyer.party?.address?.streetAddress, buyer.party?.address?.locality]
+      .filter((parte): parte is string => Boolean(parte))
+      .join(", ");
+
+    return {
+      totalContratado: buyer.total_contracts ?? 0,
+      ultimoProceso: buyer.last_process ?? null,
+      telefono: buyer.party?.contactPoint?.telephone ?? null,
+      web: buyer.party?.contactPoint?.url ?? null,
+      direccion: direccionPartes.length > 0 ? direccionPartes : null,
+    };
   } catch {
     return null;
   }

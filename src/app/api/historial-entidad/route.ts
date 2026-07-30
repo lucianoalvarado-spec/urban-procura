@@ -1,5 +1,5 @@
 import { NextRequest } from "next/server";
-import { obtenerHistorialEntidad } from "@/lib/data/provider";
+import { obtenerHistorialEntidad, obtenerPerfilEntidad } from "@/lib/data/provider";
 import { clienteIp, rateLimit, respuestaLimiteExcedido } from "@/lib/rate-limit";
 
 export const preferredRegion = "gru1";
@@ -16,9 +16,12 @@ export async function GET(request: NextRequest) {
 
   const entidad = request.nextUrl.searchParams.get("entidad")?.trim() ?? "";
   if (!entidad) {
-    return Response.json({ fuente: "mock", adjudicaciones: [] });
+    return Response.json({ fuente: "mock", adjudicaciones: [], perfilEntidad: null });
   }
 
-  const resultado = await obtenerHistorialEntidad(entidad);
-  return Response.json(resultado);
+  const [resultado, perfilEntidad] = await Promise.all([
+    obtenerHistorialEntidad(entidad),
+    obtenerPerfilEntidad(entidad),
+  ]);
+  return Response.json({ ...resultado, perfilEntidad });
 }
