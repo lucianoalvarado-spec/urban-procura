@@ -25,19 +25,30 @@ export function AdjuntosField({
   label = "Documentos adjuntos",
   documentos,
   onChange,
+  accept,
+  maxArchivos,
 }: {
   label?: string;
   documentos: DocumentoAdjunto[];
   onChange: (documentos: DocumentoAdjunto[]) => void;
+  accept?: string;
+  maxArchivos?: number;
 }) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [error, setError] = useState<string | null>(null);
+  const limiteAlcanzado = maxArchivos !== undefined && documentos.length >= maxArchivos;
 
   const adjuntar = async (files: FileList | null) => {
     if (!files || files.length === 0) return;
     setError(null);
     const nuevos: DocumentoAdjunto[] = [];
+    const espacioDisponible =
+      maxArchivos !== undefined ? Math.max(0, maxArchivos - documentos.length) : Infinity;
     for (const file of Array.from(files)) {
+      if (nuevos.length >= espacioDisponible) {
+        setError(`Solo se permite${maxArchivos === 1 ? " 1 archivo" : `n ${maxArchivos} archivos`} — "${file.name}" no se adjuntó.`);
+        break;
+      }
       if (file.size > TAMANO_MAXIMO) {
         setError(`"${file.name}" pesa más de 3 MB — no se adjuntó.`);
         continue;
@@ -66,14 +77,16 @@ export function AdjuntosField({
         <button
           type="button"
           onClick={() => inputRef.current?.click()}
-          className="rounded-lg border border-[var(--border)] px-2.5 py-1 text-xs font-medium text-slate-600 hover:bg-[var(--surface-muted)]"
+          disabled={limiteAlcanzado}
+          className="rounded-lg border border-[var(--border)] px-2.5 py-1 text-xs font-medium text-slate-600 hover:bg-[var(--surface-muted)] disabled:cursor-not-allowed disabled:opacity-40"
         >
           + Adjuntar archivo
         </button>
         <input
           ref={inputRef}
           type="file"
-          multiple
+          multiple={maxArchivos === undefined || maxArchivos > 1}
+          accept={accept}
           aria-label={label}
           className="hidden"
           onChange={(e) => adjuntar(e.target.files)}

@@ -163,6 +163,8 @@ export interface DocumentoRepositorio {
   nombre: string;
   categoria: "Legal" | "Tributario" | "RNP" | "Declaraciones" | "Cartas" | "Certificados";
   fechaVigencia?: string;
+  fechaEmision?: string;
+  documentos?: DocumentoAdjunto[];
 }
 
 export type CategoriaRnp = "bienes" | "servicios" | "consultoriaObras" | "ejecucionObras";
