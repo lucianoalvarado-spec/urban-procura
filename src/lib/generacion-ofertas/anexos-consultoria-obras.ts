@@ -39,6 +39,12 @@ import type { AnexoGenerado } from "./anexos-obras";
 // ABREVIADO" por error de copiado del MEF, siendo este el documento regular) — no se
 // autogenera. El Anexo 17 de la versión abreviada (bonificación 5% MYPE) tampoco, por
 // estar fuera del alcance aprobado de 8 anexos.
+//
+// El umbral de S/ 200,000 del Anexo 14 (bonificación 10%, distinto de los S/ 900,000 de
+// Obras) está confirmado por el mismo documento #7, numeral 75.6 del artículo 75 del
+// Reglamento: "...no supere los doscientos mil y 00/100 soles (S/ 200 000,00) para la
+// contratación de servicios en general y consultorías, y no superen los novecientos mil
+// y 00/100 soles (S/ 900 000,00) en el caso de obras...".
 
 export interface DatosOfertaConsultoriaObras {
   nomenclatura: string;

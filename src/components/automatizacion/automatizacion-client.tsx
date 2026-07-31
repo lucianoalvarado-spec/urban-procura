@@ -321,6 +321,16 @@ export function AutomatizacionClient({ procesosSugeridos }: { procesosSugeridos:
                     ? { regular: "Licitación pública de obras", abreviada: "Licitación pública abreviada de obras" }
                     : { regular: "Concurso público para consultoría de obra", abreviada: "Concurso público abreviado para consultoría de obra" }
                 }
+                labelBonificacion={
+                  tipo === "obra"
+                    ? "Solicito la bonificación del 10% (obra fuera de Lima y Callao, cuantía ≤ S/ 900,000)"
+                    : "Solicito la bonificación del 10% (prestación fuera de Lima y Callao, cuantía ≤ S/ 200,000)"
+                }
+                labelExperiencia={
+                  tipo === "obra"
+                    ? "Experiencia en Obra registrada en tu Perfil para el Anexo N° 11"
+                    : "Experiencia en Consultoría de Obras registrada en tu Perfil para el Anexo N° 11"
+                }
                 opciones={opciones}
                 setOpciones={setOpciones}
                 anexos={anexos}
@@ -432,6 +442,8 @@ function AnexosCard({
   tituloDocumento,
   subtitleDocumento,
   opcionesLicitacion,
+  labelBonificacion,
+  labelExperiencia,
   opciones,
   setOpciones,
   anexos,
@@ -445,6 +457,8 @@ function AnexosCard({
   tituloDocumento: string;
   subtitleDocumento: string;
   opcionesLicitacion: { regular: string; abreviada: string };
+  labelBonificacion: string;
+  labelExperiencia: string;
   opciones: OpcionesAnexos;
   setOpciones: (o: OpcionesAnexos) => void;
   anexos: AnexoGenerado[] | null;
@@ -544,7 +558,7 @@ function AnexosCard({
               onChange={(e) => setOpciones({ ...opciones, solicitaBonificacion10: e.target.checked })}
               className="h-4 w-4 rounded border-[var(--border)] text-[var(--brand-600)]"
             />
-            Solicito la bonificación del 10% (obra fuera de Lima y Callao, cuantía ≤ S/ 900,000)
+            {labelBonificacion}
           </label>
           {opciones.solicitaBonificacion10 && (
             <input
@@ -568,7 +582,7 @@ function AnexosCard({
         </div>
 
         <p className="text-xs text-slate-400">
-          Experiencia registrada en tu Perfil para el Anexo N° 11: {experienciaCount} contrato(s).
+          {labelExperiencia}: {experienciaCount} contrato(s).
         </p>
 
         <button

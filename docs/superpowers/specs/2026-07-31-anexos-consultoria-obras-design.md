@@ -16,7 +16,7 @@ Se descargó y extrajo el texto real (no asumido — mismo estándar de rigor qu
 
 ### El documento cubre 3 objetos de contratación combinados
 
-Este único .docx no es exclusivo de "Consultoría de Obras": su Capítulo III ("Requerimiento") tiene 3 variantes intercambiables según lo que la entidad esté contratando — Consultorías en general, **Consultoría de Obra**, o Servicio de Mantenimiento Vial — cada una con su propio sub-capítulo de requisitos de calificación. Para Urban Procura solo interesa la variante "Consultoría de Obra" (coincide con la categoría `"Consultoría de Obras"` ya existente en `Categoria` y con `especialidad === "Consultoría de obra"` en `ExperienciaProveedor`).
+Este único .docx no es exclusivo de "Consultoría de Obras": su Capítulo III ("Requerimiento") tiene 3 variantes intercambiables según lo que la entidad esté contratando — Consultorías en general, **Consultoría de Obra**, o Servicio de Mantenimiento Vial — cada una con su propio sub-capítulo de requisitos de calificación. Para Urban Procura solo interesa la variante "Consultoría de Obra" (coincide con la categoría `"Consultoría de Obras"` ya existente en `Categoria` y con `especialidad === "Consultoría de Obras"` en `ExperienciaProveedor`).
 
 Tiene un documento hermano "abreviado" (`8_Bases_estandar_de_Concurso_publico_abreviado_para_consultorias_y_servicios_de_mantenimiento_vial.docx`), igual que Obras tuvo el par regular/abreviada (docs #3/#4). **Falta confirmar durante la implementación** (extrayendo el texto del #8, no asumiendo) si la numeración de los 17 anexos es idéntica entre ambos — para Obras sí lo fue, pero no se puede dar por sentado sin verificar este documento específico.
 
@@ -26,7 +26,7 @@ De la sección "CONTENIDO DE LAS OFERTAS" del documento #7 (SECCIÓN GENERAL, co
 
 - Obligatorios siempre: Anexo 1 (declaración jurada de datos del postor), Anexo 2 (pacto de integridad), Anexo 3 (declaración jurada de veracidad/no impedimento), Anexo 6 (precio de la oferta).
 - Anexo 4 (promesa de consorcio) — solo si es consorcio.
-- Anexo 11 (experiencia del postor en la especialidad) — para acreditar requisitos de calificación, con la tabla de contratos (cliente/objeto/monto/fecha), tomado de `proveedor.experiencia.filter(e => e.especialidad === "Consultoría de obra")`.
+- Anexo 11 (experiencia del postor en la especialidad) — para acreditar requisitos de calificación, con la tabla de contratos (cliente/objeto/monto/fecha), tomado de `proveedor.experiencia.filter(e => e.especialidad === "Consultoría de Obras")`.
 - Anexo 13 (exoneración IGV Amazonía) y Anexo 14 (bonificación 10% fuera de Lima/Callao) — facultativos, mismo patrón de checkbox que Obras.
 
 **Numeración distinta a Obras, confirmada por texto, no asumida**: en el documento de Obras, IGV es el Anexo 13 y bonificación 10% es el Anexo 9; en este documento son Anexo 13 (IGV) y Anexo 14 (bonificación). Cada documento tiene su propia numeración oficial — no se reutiliza la de Obras.
