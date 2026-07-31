@@ -8,6 +8,7 @@ import { formatFecha, diasRestantes } from "@/lib/format";
 import { estiloVigencia, etiquetaVigencia, textoVigencia } from "@/lib/data/documentos";
 import { Card, CardBody, CardHeader } from "@/components/ui/card";
 import { TextField, SelectField } from "@/components/perfil/field";
+import { AdjuntosField } from "@/components/perfil/adjuntos-field";
 
 const UMBRAL_AVISO_DIAS = 30;
 
@@ -20,7 +21,28 @@ const CATEGORIAS_DOC: DocumentoRepositorio["categoria"][] = [
   "Certificados",
 ];
 
-const VACIO = { nombre: "", categoria: "Legal" as DocumentoRepositorio["categoria"], fechaVigencia: "" };
+const NOMBRES_DOC_FRECUENTES = [
+  "Vigencia de poder",
+  "Certificado RNP",
+  "Constancia de no estar inhabilitado para contratar con el Estado",
+  "DNI del representante legal",
+  "RUC (ficha SUNAT)",
+  "Certificado de habilidad del colegio profesional",
+  "Carta fianza modelo",
+  "Declaración jurada antisoborno",
+];
+
+const OTROS = "Otros";
+const OPCIONES_NOMBRE = [...NOMBRES_DOC_FRECUENTES, OTROS];
+
+const VACIO = {
+  nombreSeleccionado: NOMBRES_DOC_FRECUENTES[0],
+  nombreLibre: "",
+  categoria: "Legal" as DocumentoRepositorio["categoria"],
+  fechaEmision: "",
+  fechaVigencia: "",
+  documentos: [] as NonNullable<DocumentoRepositorio["documentos"]>,
+};
 
 export function DocumentosCard() {
   const { proveedor, actualizarDatosEmpresa } = useProveedor();
@@ -33,13 +55,17 @@ export function DocumentosCard() {
     });
   };
 
+  const nombreFinal = form.nombreSeleccionado === OTROS ? form.nombreLibre.trim() : form.nombreSeleccionado;
+
   const agregar = () => {
-    if (!form.nombre.trim()) return;
+    if (!nombreFinal) return;
     const nuevo: DocumentoRepositorio = {
       id: generarId("doc"),
-      nombre: form.nombre,
+      nombre: nombreFinal,
       categoria: form.categoria,
+      fechaEmision: form.fechaEmision || undefined,
       fechaVigencia: form.fechaVigencia || undefined,
+      documentos: form.documentos.length > 0 ? form.documentos : undefined,
     };
     actualizarDatosEmpresa({ documentosRepositorio: [...proveedor.documentosRepositorio, nuevo] });
     setForm(VACIO);
@@ -67,10 +93,11 @@ export function DocumentosCard() {
         {agregando && (
           <div className="space-y-3 rounded-lg border border-[var(--border)] p-3">
             <div className="grid gap-3 sm:grid-cols-3">
-              <TextField
+              <SelectField
                 label="Nombre"
-                value={form.nombre}
-                onChange={(v) => setForm((f) => ({ ...f, nombre: v }))}
+                value={form.nombreSeleccionado}
+                onChange={(v) => setForm((f) => ({ ...f, nombreSeleccionado: v }))}
+                options={OPCIONES_NOMBRE}
                 className="sm:col-span-2"
               />
               <SelectField
@@ -81,13 +108,35 @@ export function DocumentosCard() {
                 }
                 options={CATEGORIAS_DOC}
               />
+              {form.nombreSeleccionado === OTROS && (
+                <TextField
+                  label="Nombre específico"
+                  value={form.nombreLibre}
+                  onChange={(v) => setForm((f) => ({ ...f, nombreLibre: v }))}
+                  placeholder="ej. Certificado ISO 9001"
+                  className="sm:col-span-3"
+                />
+              )}
               <TextField
-                label="Vigencia (opcional)"
+                label="Fecha de emisión (opcional)"
+                type="date"
+                value={form.fechaEmision}
+                onChange={(v) => setForm((f) => ({ ...f, fechaEmision: v }))}
+              />
+              <TextField
+                label="Fecha fin de vigencia (opcional)"
                 type="date"
                 value={form.fechaVigencia}
                 onChange={(v) => setForm((f) => ({ ...f, fechaVigencia: v }))}
               />
             </div>
+            <AdjuntosField
+              label="PDF del documento"
+              documentos={form.documentos}
+              onChange={(documentos) => setForm((f) => ({ ...f, documentos }))}
+              accept="application/pdf"
+              maxArchivos={1}
+            />
             <div className="flex items-center gap-3">
               <button
                 type="button"
@@ -116,6 +165,7 @@ export function DocumentosCard() {
           proveedor.documentosRepositorio.map((doc) => {
             const dias = doc.fechaVigencia ? diasRestantes(doc.fechaVigencia) : null;
             const porVencer = dias !== null && dias <= UMBRAL_AVISO_DIAS;
+            const pdf = doc.documentos?.[0];
             return (
               <div
                 key={doc.id}
@@ -126,11 +176,26 @@ export function DocumentosCard() {
                   <span className="ml-2 text-xs text-slate-400">{doc.categoria}</span>
                 </div>
                 <div className="flex items-center gap-3">
+                  {doc.fechaEmision && (
+                    <span className="text-xs text-slate-400">
+                      Emisión: {formatFecha(doc.fechaEmision)}
+                    </span>
+                  )}
                   {doc.fechaVigencia && (
                     <span className={`text-xs ${porVencer ? `font-medium ${textoVigencia(dias)}` : "text-slate-400"}`}>
                       Vigencia: {formatFecha(doc.fechaVigencia)}
                       {porVencer && ` · ${etiquetaVigencia(dias)}`}
                     </span>
+                  )}
+                  {pdf && (
+                    <a
+                      href={pdf.dataUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="text-xs font-medium text-[var(--brand-600)] hover:underline"
+                    >
+                      Ver PDF
+                    </a>
                   )}
                   <button
                     type="button"
