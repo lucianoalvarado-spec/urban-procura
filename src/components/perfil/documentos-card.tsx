@@ -35,19 +35,19 @@ const NOMBRES_DOC_FRECUENTES = [
 const OTROS = "Otros";
 const OPCIONES_NOMBRE = [...NOMBRES_DOC_FRECUENTES, OTROS];
 
-const VACIO = {
+const vacio = () => ({
   nombreSeleccionado: NOMBRES_DOC_FRECUENTES[0],
   nombreLibre: "",
   categoria: "Legal" as DocumentoRepositorio["categoria"],
   fechaEmision: "",
   fechaVigencia: "",
   documentos: [] as NonNullable<DocumentoRepositorio["documentos"]>,
-};
+});
 
 export function DocumentosCard() {
   const { proveedor, actualizarDatosEmpresa } = useProveedor();
   const [agregando, setAgregando] = useState(false);
-  const [form, setForm] = useState(VACIO);
+  const [form, setForm] = useState(vacio());
 
   const eliminar = (id: string) => {
     actualizarDatosEmpresa({
@@ -68,7 +68,7 @@ export function DocumentosCard() {
       documentos: form.documentos.length > 0 ? form.documentos : undefined,
     };
     actualizarDatosEmpresa({ documentosRepositorio: [...proveedor.documentosRepositorio, nuevo] });
-    setForm(VACIO);
+    setForm(vacio());
     setAgregando(false);
   };
 
@@ -141,7 +141,8 @@ export function DocumentosCard() {
               <button
                 type="button"
                 onClick={agregar}
-                className="rounded-lg bg-[var(--brand-600)] px-4 py-2 text-xs font-medium text-white hover:bg-[var(--brand-700)]"
+                disabled={!nombreFinal}
+                className="rounded-lg bg-[var(--brand-600)] px-4 py-2 text-xs font-medium text-white hover:bg-[var(--brand-700)] disabled:cursor-not-allowed disabled:opacity-40"
               >
                 Guardar
               </button>
@@ -149,7 +150,7 @@ export function DocumentosCard() {
                 type="button"
                 onClick={() => {
                   setAgregando(false);
-                  setForm(VACIO);
+                  setForm(vacio());
                 }}
                 className="text-xs font-medium text-slate-500 hover:text-slate-700"
               >
@@ -190,11 +191,11 @@ export function DocumentosCard() {
                   {pdf && (
                     <a
                       href={pdf.dataUrl}
-                      target="_blank"
-                      rel="noreferrer"
+                      download={pdf.nombre}
+                      aria-label={`Descargar PDF de ${doc.nombre}`}
                       className="text-xs font-medium text-[var(--brand-600)] hover:underline"
                     >
-                      Ver PDF
+                      Descargar PDF
                     </a>
                   )}
                   <button

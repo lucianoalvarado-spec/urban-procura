@@ -78,6 +78,7 @@ export function AdjuntosField({
           type="button"
           onClick={() => inputRef.current?.click()}
           disabled={limiteAlcanzado}
+          title={limiteAlcanzado ? `Ya adjuntaste el máximo de ${maxArchivos} archivo${maxArchivos === 1 ? "" : "s"} — eliminá el actual para cambiarlo` : undefined}
           className="rounded-lg border border-[var(--border)] px-2.5 py-1 text-xs font-medium text-slate-600 hover:bg-[var(--surface-muted)] disabled:cursor-not-allowed disabled:opacity-40"
         >
           + Adjuntar archivo
