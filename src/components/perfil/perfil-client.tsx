@@ -163,7 +163,7 @@ function PreferenciasForm() {
         </div>
 
         <label className="flex flex-col gap-1 text-xs font-medium text-slate-500">
-          Palabras clave (separadas por coma)
+          Palabras clave — escribí las que quieras, separadas por coma
           <input
             type="text"
             value={form.palabrasClave.join(", ")}
@@ -176,22 +176,28 @@ function PreferenciasForm() {
                   .filter(Boolean),
               }))
             }
+            placeholder="ej. saneamiento, mi palabra clave propia"
             className="rounded-lg border border-[var(--border)] px-2.5 py-2 text-sm text-[var(--foreground)] focus:border-[var(--brand-500)] focus:outline-none"
           />
         </label>
-        <div className="-mt-3 flex flex-wrap gap-1.5">
-          {PALABRAS_CLAVE_SUGERIDAS.filter((p) => !form.palabrasClave.includes(p)).map((p) => (
-            <button
-              key={p}
-              type="button"
-              onClick={() =>
-                setForm((f) => ({ ...f, palabrasClave: [...f.palabrasClave, p] }))
-              }
-              className="rounded-full border border-dashed border-[var(--border)] px-2.5 py-1 text-[11px] text-slate-500 hover:border-[var(--brand-500)] hover:text-[var(--brand-700)]"
-            >
-              + {p}
-            </button>
-          ))}
+        <div className="-mt-3 flex flex-col gap-1.5">
+          <p className="text-[11px] text-slate-400">
+            Sugerencias rápidas — hacé clic para agregarlas, o escribí las tuyas arriba:
+          </p>
+          <div className="flex flex-wrap gap-1.5">
+            {PALABRAS_CLAVE_SUGERIDAS.filter((p) => !form.palabrasClave.includes(p)).map((p) => (
+              <button
+                key={p}
+                type="button"
+                onClick={() =>
+                  setForm((f) => ({ ...f, palabrasClave: [...f.palabrasClave, p] }))
+                }
+                className="rounded-full border border-dashed border-[var(--border)] px-2.5 py-1 text-[11px] text-slate-500 hover:border-[var(--brand-500)] hover:text-[var(--brand-700)]"
+              >
+                + {p}
+              </button>
+            ))}
+          </div>
         </div>
 
         <div className="flex items-center gap-3 border-t border-[var(--border)] pt-4">
