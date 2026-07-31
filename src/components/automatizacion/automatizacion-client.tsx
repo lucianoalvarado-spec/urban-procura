@@ -10,6 +10,12 @@ import {
   type AnexoGenerado,
   type DatosOfertaObras,
 } from "@/lib/generacion-ofertas/anexos-obras";
+import {
+  generarAnexosConsultoriaObras,
+  ANEXOS_SOLO_PERFECCIONAMIENTO_CO,
+  ANEXOS_NO_AUTOMATIZADOS_CO,
+  type DatosOfertaConsultoriaObras,
+} from "@/lib/generacion-ofertas/anexos-consultoria-obras";
 import { useProveedor } from "@/lib/state/proveedor-context";
 import { useAnalisisGuardados } from "@/lib/state/analisis-store";
 import { cumplePlan } from "@/lib/plan";
@@ -19,6 +25,14 @@ import { UpgradeNotice } from "@/components/plan/upgrade-notice";
 import { ProcesoSearchBox } from "@/components/shared/proceso-search-box";
 
 type OpcionesAnexos = Omit<DatosOfertaObras, "nomenclatura" | "entidad" | "proveedor" | "experienciaObras">;
+
+type CategoriaConAnexos = "obra" | "consultoria-obras";
+
+function categoriaConAnexos(categoria: Proceso["categoria"]): CategoriaConAnexos | null {
+  if (categoria === "Obra") return "obra";
+  if (categoria === "Consultoría de Obras") return "consultoria-obras";
+  return null;
+}
 
 function opcionesIniciales(proceso: Proceso): OpcionesAnexos {
   return {
@@ -66,10 +80,9 @@ export function AutomatizacionClient({ procesosSugeridos }: { procesosSugeridos:
 
   const analisis = proceso ? analisisGuardados[proceso.id] : undefined;
 
-  const generarAnexos = () => {
+  const generarAnexos = (tipo: CategoriaConAnexos) => {
     if (!proceso || !opciones) return;
-    const experienciaObras = proveedor.experiencia.filter((e) => e.especialidad === "Obra");
-    const datos: DatosOfertaObras = {
+    const datosBase = {
       ...opciones,
       nomenclatura: proceso.objeto,
       entidad: proceso.entidad,
@@ -80,9 +93,20 @@ export function AutomatizacionClient({ procesosSugeridos }: { procesosSugeridos:
         dniRepresentante: proveedor.dniRepresentante,
         correo: proveedor.correo,
       },
-      experienciaObras,
     };
-    setAnexos(generarAnexosObras(datos));
+    if (tipo === "obra") {
+      const datos: DatosOfertaObras = {
+        ...datosBase,
+        experienciaObras: proveedor.experiencia.filter((e) => e.especialidad === "Obra"),
+      };
+      setAnexos(generarAnexosObras(datos));
+    } else {
+      const datos: DatosOfertaConsultoriaObras = {
+        ...datosBase,
+        experienciaConsultoriaObras: proveedor.experiencia.filter((e) => e.especialidad === "Consultoría de Obras"),
+      };
+      setAnexos(generarAnexosConsultoriaObras(datos));
+    }
   };
 
   const descargarAnexos = async (formato: "word" | "excel") => {
@@ -273,21 +297,42 @@ export function AutomatizacionClient({ procesosSugeridos }: { procesosSugeridos:
             </button>
           </div>
 
-          {proceso.categoria !== "Obra" ? (
-            <UpgradeNoticeCategoria categoria={proceso.categoria} />
-          ) : (
-            opciones && (
-              <AnexosObrasCard
+          {(() => {
+            const tipo = categoriaConAnexos(proceso.categoria);
+            if (!tipo) return <UpgradeNoticeCategoria categoria={proceso.categoria} />;
+            if (!opciones) return null;
+            const experienciaCount = proveedor.experiencia.filter(
+              (e) => e.especialidad === (tipo === "obra" ? "Obra" : "Consultoría de Obras")
+            ).length;
+            return (
+              <AnexosCard
+                tituloDocumento={
+                  tipo === "obra"
+                    ? "Anexos de la oferta (Licitación de obras)"
+                    : "Anexos de la oferta (Concurso público de Consultoría de Obra)"
+                }
+                subtitleDocumento={
+                  tipo === "obra"
+                    ? "Bases Estándar vigentes bajo la Ley N° 32069 — Directiva N° 0005-2025-EF/54.01 del MEF, modificada por la R.D. N° 0001-2026-EF/54.01"
+                    : "Bases Estándar de Concurso Público para Consultorías y Servicios de Mantenimiento Vial (variante Consultoría de Obra), vigentes bajo la Ley N° 32069 — misma Directiva N° 0005-2025-EF/54.01, modificada por la R.D. N° 0001-2026-EF/54.01"
+                }
+                opcionesLicitacion={
+                  tipo === "obra"
+                    ? { regular: "Licitación pública de obras", abreviada: "Licitación pública abreviada de obras" }
+                    : { regular: "Concurso público para consultoría de obra", abreviada: "Concurso público abreviado para consultoría de obra" }
+                }
                 opciones={opciones}
                 setOpciones={setOpciones}
                 anexos={anexos}
-                onGenerar={generarAnexos}
+                onGenerar={() => generarAnexos(tipo)}
                 onDescargar={descargarAnexos}
                 descargando={descargandoAnexos}
-                experienciaObrasCount={proveedor.experiencia.filter((e) => e.especialidad === "Obra").length}
+                experienciaCount={experienciaCount}
+                anexosSoloPerfeccionamiento={tipo === "obra" ? ANEXOS_SOLO_PERFECCIONAMIENTO : ANEXOS_SOLO_PERFECCIONAMIENTO_CO}
+                anexosNoAutomatizados={tipo === "obra" ? ANEXOS_NO_AUTOMATIZADOS : ANEXOS_NO_AUTOMATIZADOS_CO}
               />
-            )
-          )}
+            );
+          })()}
 
           <Card>
             <CardBody className="flex flex-wrap items-center justify-between gap-3">
@@ -374,40 +419,48 @@ export function AutomatizacionClient({ procesosSugeridos }: { procesosSugeridos:
 function UpgradeNoticeCategoria({ categoria }: { categoria: string }) {
   return (
     <div className="rounded-lg border border-[var(--border)] bg-[var(--surface-muted)] px-4 py-3 text-sm text-slate-600">
-      Los anexos oficiales automáticos (Bases Estándar de Licitación Pública de Obras, Ley N°
-      32069) solo están implementados para procesos de categoría <strong>Obra</strong> — este
-      proceso es de categoría <strong>{categoria}</strong>. Las bases estándar de Bienes,
-      Servicios y Consultoría todavía no están cargadas en la plataforma.
+      Los anexos oficiales automáticos (Bases Estándar bajo la Ley N° 32069) solo están
+      implementados para procesos de categoría <strong>Obra</strong> y{" "}
+      <strong>Consultoría de Obras</strong> — este proceso es de categoría{" "}
+      <strong>{categoria}</strong>. Las bases estándar de Bienes y Servicios todavía no están
+      cargadas en la plataforma.
     </div>
   );
 }
 
-function AnexosObrasCard({
+function AnexosCard({
+  tituloDocumento,
+  subtitleDocumento,
+  opcionesLicitacion,
   opciones,
   setOpciones,
   anexos,
   onGenerar,
   onDescargar,
   descargando,
-  experienciaObrasCount,
+  experienciaCount,
+  anexosSoloPerfeccionamiento,
+  anexosNoAutomatizados,
 }: {
+  tituloDocumento: string;
+  subtitleDocumento: string;
+  opcionesLicitacion: { regular: string; abreviada: string };
   opciones: OpcionesAnexos;
   setOpciones: (o: OpcionesAnexos) => void;
   anexos: AnexoGenerado[] | null;
   onGenerar: () => void;
   onDescargar: (formato: "word" | "excel") => void;
   descargando: "word" | "excel" | null;
-  experienciaObrasCount: number;
+  experienciaCount: number;
+  anexosSoloPerfeccionamiento: { numero: number; titulo: string }[];
+  anexosNoAutomatizados: { numero: number; titulo: string; motivo: string }[];
 }) {
   const aplicables = anexos?.filter((a) => a.aplicable) ?? [];
   const noAplicables = anexos?.filter((a) => !a.aplicable) ?? [];
 
   return (
     <Card>
-      <CardHeader
-        title="Anexos de la oferta (Licitación de obras)"
-        subtitle="Bases Estándar vigentes bajo la Ley N° 32069 — Directiva N° 0005-2025-EF/54.01 del MEF, modificada por la R.D. N° 0001-2026-EF/54.01"
-      />
+      <CardHeader title={tituloDocumento} subtitle={subtitleDocumento} />
       <CardBody className="space-y-4">
         <div className="grid gap-3 sm:grid-cols-2">
           <label className="flex flex-col gap-1 text-xs font-medium text-slate-500">
@@ -419,8 +472,8 @@ function AnexosObrasCard({
               }
               className="rounded-lg border border-[var(--border)] px-2.5 py-2 text-sm text-[var(--foreground)]"
             >
-              <option value="regular">Licitación pública de obras</option>
-              <option value="abreviada">Licitación pública abreviada de obras</option>
+              <option value="regular">{opcionesLicitacion.regular}</option>
+              <option value="abreviada">{opcionesLicitacion.abreviada}</option>
             </select>
           </label>
           <div className="grid grid-cols-2 gap-2">
@@ -515,8 +568,7 @@ function AnexosObrasCard({
         </div>
 
         <p className="text-xs text-slate-400">
-          Experiencia en Obra registrada en tu Perfil para el Anexo N° 11: {experienciaObrasCount}{" "}
-          contrato(s).
+          Experiencia registrada en tu Perfil para el Anexo N° 11: {experienciaCount} contrato(s).
         </p>
 
         <button
@@ -615,7 +667,7 @@ function AnexosObrasCard({
                 Solo si ganas la buena pro (perfeccionamiento del contrato, no se generan acá):
               </p>
               <ul className="list-inside list-disc space-y-0.5">
-                {ANEXOS_SOLO_PERFECCIONAMIENTO.map((a) => (
+                {anexosSoloPerfeccionamiento.map((a) => (
                   <li key={a.numero}>
                     Anexo N° {a.numero} — {a.titulo}
                   </li>
@@ -625,7 +677,7 @@ function AnexosObrasCard({
                 Casos excepcionales, complétalos manualmente si aplican:
               </p>
               <ul className="list-inside list-disc space-y-0.5">
-                {ANEXOS_NO_AUTOMATIZADOS.map((a) => (
+                {anexosNoAutomatizados.map((a) => (
                   <li key={a.numero}>
                     Anexo N° {a.numero} — {a.titulo}
                   </li>
