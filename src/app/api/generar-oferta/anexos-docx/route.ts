@@ -71,7 +71,7 @@ export async function POST(request: NextRequest) {
     new Paragraph({
       children: [
         new TextRun({
-          text: "Prellenado con datos del Perfil del proveedor a partir de las Bases Estándar de Licitación Pública de Obras vigentes bajo la Ley N° 32069 (Directiva N° 0005-2025-EF/54.01 del MEF, modificada por la Resolución Directoral N° 0001-2026-EF/54.01). Los campos entre corchetes [CONSIGNAR ...] no se pudieron completar automáticamente — revísalos y complétalos a mano antes de presentar la oferta.",
+          text: `Prellenado con datos del Perfil del proveedor a partir de las Bases Estándar de ${proceso.categoria === "Obra" ? "Licitación Pública de Obras" : "Concurso Público de Consultoría de Obra"} vigentes bajo la Ley N° 32069 (Directiva N° 0005-2025-EF/54.01 del MEF, modificada por la Resolución Directoral N° 0001-2026-EF/54.01). Los campos entre corchetes [CONSIGNAR ...] no se pudieron completar automáticamente — revísalos y complétalos a mano antes de presentar la oferta.`,
           italics: true,
         }),
       ],
