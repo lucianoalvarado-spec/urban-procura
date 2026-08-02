@@ -14,7 +14,7 @@ Se probó en vivo el endpoint real ya usado por la app (`GET https://eap.oece.go
 ```
 
 **Dos límites de datos confirmados, no asumidos:**
-1. **No hay fecha "Desde" por tipo de registro** en esta respuesta — las fechas de vigencia que muestra el RNP oficial (ej. "Desde 21/03/2025") no vienen en este JSON. Solo existe `lscIdTipRegVig`, que indica cuáles de los 4 tipos están vigentes *ahora* (sin fecha), no desde cuándo.
+1. **No hay fecha "Desde" por tipo de registro** en esta respuesta — las fechas de vigencia que muestra el RNP oficial (ej. "Desde 21/03/2025") no vienen en este JSON. Solo existe `lscIdTipRegVig`, que indica cuáles de los 4 tipos NO están vigentes *ahora* (sin fecha — confirmado empiricamente: invierte lo que el nombre sugiere, detallado en "Riesgos" abajo), no desde cuándo.
 2. **No hay matriz de especialidad × categoría con círculos** (la tabla de 4 columnas — Formulación de fichas técnicas / Elaboración de expediente técnico / Supervisión de elaboración de expediente / Supervisión de ejecución de obras — que muestra la ficha oficial para Consultor de Obras). El campo `desCat` de cada especialidad es literalmente `"A"` para las 5 especialidades del RUC de prueba — no es la categoría de la matriz, es otra cosa (posiblemente un nivel/tier). Esa matriz probablemente solo existe en la constancia PDF oficial, no como dato estructurado accesible por este endpoint.
 
 El usuario decidió (confirmado explícitamente): reorganizar con los datos reales disponibles — `lscIdTipReg`/`lscIdTipRegVig` para saber qué registros tiene el proveedor y cuáles están vigentes ahora — sin inventar fechas "Desde" ni la matriz de círculos.
@@ -47,7 +47,7 @@ export interface EstadoRnp {
 
 Mapeo de código a `CategoriaRnp`, confirmado por el comentario ya existente en `src/app/api/rnp/obras/route.ts:17-18`: `1` → `ejecucionObras`, `2` → `consultoriaObras`. Los códigos `3`/`4` corresponden a `bienes`/`servicios` pero ese comentario no especifica cuál es cuál — **no verificado con certeza en esta sesión** (se intentó cruzar contra las capturas del usuario, que muestran los 4 tipos con fecha para el mismo RUC, pero el orden de aparición en la ficha impresa no permite inferir la asociación con certeza matemática). Se asigna `3` → `bienes`, `4` → `servicios` como mejor estimación, y la implementación debe verificarlo contra `https://apps.osce.gob.pe/perfilprov-ui` (o el buscador público del RNP) para el RUC de prueba antes de darlo por bueno — si están invertidos, es un cambio de una línea (swap de las dos claves en el mapa), sin impacto en ningún otro dato.
 
-`lscIdTipReg: "3 2 1 4"` → `["3","2","1","4"]` → `tipo` por cada uno. `lscIdTipRegVig: "2 1"` → set de códigos vigentes → `vigente: codigo in set`. Un tipo que aparece en `lscIdTipReg` pero no en `lscIdTipRegVig` se muestra igual (el proveedor tiene ese registro) pero con `vigente: false`.
+`lscIdTipReg: "3 2 1 4"` → `["3","2","1","4"]` → `tipo` por cada uno. `lscIdTipRegVig: "2 1"` → set de códigos NO vigentes → `vigente: !(codigo in set)`. Un tipo que aparece en `lscIdTipReg` pero no en `lscIdTipRegVig` se muestra igual (el proveedor tiene ese registro) pero con `vigente: true` (pues su código no está en el set de no-vigentes).
 
 `RnpResultado` (el tipo exportado que ya consume `registro-form.tsx`) suma `registros: RegistroRnp[]`.
 
