@@ -1,6 +1,7 @@
 import { NextRequest } from "next/server";
 import { clienteIp, rateLimit, respuestaLimiteExcedido } from "@/lib/rate-limit";
 import { esRucValido } from "@/lib/validation";
+import type { CategoriaRnp, RegistroRnp } from "@/lib/data/types";
 
 // Proxy server-to-server hacia el RNP del OSCE (ver docs/prompt-claude-code-urban-procura.md,
 // sección 3). Confirmado en esta sesión:
@@ -29,6 +30,8 @@ interface OsceProveedor {
   esAptoContratar: boolean;
   cmcTexto: string | null;
   espProvT01s: OsceEspecialidad[] | null;
+  lscIdTipReg: string | null;
+  lscIdTipRegVig: string | null;
 }
 
 interface OsceFichaResponse {
@@ -44,6 +47,7 @@ export interface RnpResultado {
   aptoContratar?: boolean;
   especialidades?: string[];
   capacidadMaximaContratacion?: number | null;
+  registros?: RegistroRnp[];
   mensaje: string;
 }
 
@@ -51,6 +55,28 @@ function parseCapacidad(texto: string | null): number | null {
   if (!texto) return null;
   const numero = Number(texto.replace(/[^0-9.]/g, ""));
   return Number.isFinite(numero) ? numero : null;
+}
+
+// "1" → ejecucionObras, "2" → consultoriaObras — confirmado por el comentario existente en
+// src/app/api/rnp/obras/route.ts. "3"/"4" → bienes/servicios, asignación NO verificada con
+// certeza (ver Global Constraints del plan) — si al probar contra un perfil real resulta
+// invertida, es swap de una línea en este mapa, sin impacto en ningún otro dato.
+const CODIGO_A_CATEGORIA: Record<string, CategoriaRnp> = {
+  "1": "ejecucionObras",
+  "2": "consultoriaObras",
+  "3": "bienes",
+  "4": "servicios",
+};
+
+function parseRegistros(lscIdTipReg: string | null, lscIdTipRegVig: string | null): RegistroRnp[] {
+  if (!lscIdTipReg) return [];
+  const codigosVigentes = new Set((lscIdTipRegVig ?? "").split(" ").filter(Boolean));
+  return lscIdTipReg
+    .split(" ")
+    .filter(Boolean)
+    .map((codigo) => ({ codigo, tipo: CODIGO_A_CATEGORIA[codigo] }))
+    .filter((x): x is { codigo: string; tipo: CategoriaRnp } => Boolean(x.tipo))
+    .map(({ codigo, tipo }) => ({ tipo, vigente: codigosVigentes.has(codigo) }));
 }
 
 const LIMITE = 20;
@@ -115,6 +141,7 @@ export async function GET(request: NextRequest) {
       aptoContratar: proveedor.esAptoContratar,
       especialidades: (proveedor.espProvT01s ?? []).map((e) => e.desEsp),
       capacidadMaximaContratacion: parseCapacidad(proveedor.cmcTexto),
+      registros: parseRegistros(proveedor.lscIdTipReg, proveedor.lscIdTipRegVig),
       mensaje: "Encontramos tu empresa en el RNP.",
     };
     return Response.json(resultado);

@@ -106,6 +106,7 @@ export function RegistroForm() {
       rnpEstado.vigente = Boolean(rnp.habilitado);
       rnpEstado.especialidades = rnp.especialidades ?? [];
       rnpEstado.capacidadMaximaGeneral = rnp.capacidadMaximaContratacion ?? null;
+      rnpEstado.registros = rnp.registros ?? [];
     }
 
     setDatosEmpresa({

@@ -169,6 +169,14 @@ export interface DocumentoRepositorio {
 
 export type CategoriaRnp = "bienes" | "servicios" | "consultoriaObras" | "ejecucionObras";
 
+/** Un tipo de registro del RNP que el proveedor tiene, con si está vigente ahora mismo.
+ * Solo se puebla desde un fetch real y exitoso del RNP (ver api/rnp/route.ts) — nunca
+ * autodeclarado por el usuario. */
+export interface RegistroRnp {
+  tipo: CategoriaRnp;
+  vigente: boolean;
+}
+
 export interface EstadoRnp {
   vigente: boolean;
   numeroPartida: string;
@@ -179,6 +187,8 @@ export interface EstadoRnp {
   >;
   /** Capacidad máxima de contratación general reportada por el RNP (sin desagregar por categoría). */
   capacidadMaximaGeneral?: number | null;
+  /** undefined = el RNP nunca se consultó con éxito para este proveedor. */
+  registros?: RegistroRnp[];
 }
 
 export function crearRnpVacio(): EstadoRnp {
