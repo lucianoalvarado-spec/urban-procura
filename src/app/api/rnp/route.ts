@@ -58,9 +58,17 @@ function parseCapacidad(texto: string | null): number | null {
 }
 
 // "1" → ejecucionObras, "2" → consultoriaObras — confirmado por el comentario existente en
-// src/app/api/rnp/obras/route.ts. "3"/"4" → bienes/servicios, asignación NO verificada con
-// certeza (ver Global Constraints del plan) — si al probar contra un perfil real resulta
-// invertida, es swap de una línea en este mapa, sin impacto en ningún otro dato.
+// src/app/api/rnp/obras/route.ts. "3"/"4" → bienes/servicios — confirmado (2026-08-02) contra
+// la ficha pública del RUC de prueba 20100114187 en
+// https://apps.osce.gob.pe/perfilprov-ui/ficha/20100114187, que lista "Vigentes: BIENES,
+// SERVICIOS" para ese proveedor.
+//
+// `lscIdTipRegVig` NO significa "códigos vigentes" pese al nombre del campo — confirmado
+// empíricamente (2026-08-02) con el mismo RUC: la API devuelve `lscIdTipRegVig: "2 1"`
+// (Consultor de Obras, Ejecutor de Obras), pero la ficha pública dice exactamente lo
+// contrario, "No vigentes: EJECUTOR DE OBRA, CONSULTOR DE OBRA". Es decir, los códigos en
+// `lscIdTipRegVig` son los que NO están vigentes ahora mismo (o alguna otra clasificación no
+// confirmada) — de ahí la negación `!codigosVigentes.has(codigo)` en parseRegistros.
 const CODIGO_A_CATEGORIA: Record<string, CategoriaRnp> = {
   "1": "ejecucionObras",
   "2": "consultoriaObras",
@@ -70,13 +78,15 @@ const CODIGO_A_CATEGORIA: Record<string, CategoriaRnp> = {
 
 function parseRegistros(lscIdTipReg: string | null, lscIdTipRegVig: string | null): RegistroRnp[] {
   if (!lscIdTipReg) return [];
+  // Pese al nombre, lscIdTipRegVig lista los códigos NO vigentes (ver comentario arriba de
+  // CODIGO_A_CATEGORIA) — de ahí la negación.
   const codigosVigentes = new Set((lscIdTipRegVig ?? "").split(" ").filter(Boolean));
   return lscIdTipReg
     .split(" ")
     .filter(Boolean)
     .map((codigo) => ({ codigo, tipo: CODIGO_A_CATEGORIA[codigo] }))
     .filter((x): x is { codigo: string; tipo: CategoriaRnp } => Boolean(x.tipo))
-    .map(({ codigo, tipo }) => ({ tipo, vigente: codigosVigentes.has(codigo) }));
+    .map(({ codigo, tipo }) => ({ tipo, vigente: !codigosVigentes.has(codigo) }));
 }
 
 const LIMITE = 20;

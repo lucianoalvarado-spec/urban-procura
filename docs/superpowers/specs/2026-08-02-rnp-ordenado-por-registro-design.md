@@ -96,6 +96,6 @@ Esta tarjeta no depende de `registros` ni de si el RNP respondió — sigue func
 
 ## Riesgos / limitaciones a comunicar en la UI
 
-1. La asignación de código `3`/`4` a `bienes`/`servicios` es la mejor estimación disponible, no verificada con certeza absoluta — a confirmar durante la implementación contra el perfil público del RUC de prueba antes de dar la tarea por cerrada.
+1. La asignación de código `3`/`4` a `bienes`/`servicios` es la mejor estimación disponible, no verificada con certeza absoluta — a confirmar durante la implementación contra el perfil público del RUC de prueba antes de dar la tarea por cerrada. **Actualización (2026-08-02, verificación manual):** el mapeo `3`/`4`→`bienes`/`servicios` se confirmó correcto, pero se encontró la polaridad de `vigente` invertida — `lscIdTipRegVig` lista los códigos NO vigentes, no los vigentes como sugiere el nombre. Corregido en `src/app/api/rnp/route.ts` (`!codigosVigentes.has(codigo)`).
 2. Sin fecha "Desde" por registro — si el usuario la espera, no está disponible en la fuente de datos actual de la app.
 3. Sin la matriz de especialidad × categoría de Consultor de Obras — solo la lista de especialidades, igual que hoy (pero ahora agrupada bajo el bloque correcto).

@@ -730,6 +730,8 @@ EOF
 
 Con el RUC de prueba (20100114187, ICCGSA), buscar su ficha en el buscador público de proveedores del OSCE (`https://apps.osce.gob.pe/perfilprov-ui` o el buscador de `www.gob.pe`/`osce.gob.pe` que lo indexe) y confirmar visualmente cuál de "Proveedor de Bienes" / "Proveedor de Servicios" aparece — si la asignación actual (`"3"` → `bienes`, `"4"` → `servicios`) resulta invertida, corregir el mapa `CODIGO_A_CATEGORIA` en `src/app/api/rnp/route.ts` (Task 1, Step 2) con un commit adicional de una línea, y actualizar el comentario que documenta la incertidumbre.
 
+**Actualización (2026-08-02, verificación manual):** el mapeo `3`/`4` resultó correcto, pero la comparación contra la ficha pública encontró la polaridad de `vigente` invertida en `parseRegistros` — `lscIdTipRegVig: "2 1"` para este RUC en realidad corresponde a "No vigentes: EJECUTOR DE OBRA, CONSULTOR DE OBRA" en la ficha oficial, no a "vigentes" como asumía el código. Corregido con `!codigosVigentes.has(codigo)` en `src/app/api/rnp/route.ts`. El Step 4 de abajo (que documentaba el resultado esperado incorrecto) queda obsoleto por este hallazgo: con la corrección, "Proveedor de Bienes"/"Proveedor de Servicios" deben salir vigentes, y "Consultor de Obras"/"Ejecutor de Obras" no vigentes.
+
 - [ ] **Step 2: Levantar el dev server local**
 
 Run: `npm run dev` (Browser pane del harness, no `vercel deploy`)
