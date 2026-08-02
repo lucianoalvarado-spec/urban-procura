@@ -68,7 +68,7 @@ function parseCapacidad(texto: string | null): number | null {
 // (Consultor de Obras, Ejecutor de Obras), pero la ficha pública dice exactamente lo
 // contrario, "No vigentes: EJECUTOR DE OBRA, CONSULTOR DE OBRA". Es decir, los códigos en
 // `lscIdTipRegVig` son los que NO están vigentes ahora mismo (o alguna otra clasificación no
-// confirmada) — de ahí la negación `!codigosVigentes.has(codigo)` en parseRegistros.
+// confirmada) — de ahí la negación `!codigosNoVigentes.has(codigo)` en parseRegistros.
 const CODIGO_A_CATEGORIA: Record<string, CategoriaRnp> = {
   "1": "ejecucionObras",
   "2": "consultoriaObras",
@@ -80,13 +80,13 @@ function parseRegistros(lscIdTipReg: string | null, lscIdTipRegVig: string | nul
   if (!lscIdTipReg) return [];
   // Pese al nombre, lscIdTipRegVig lista los códigos NO vigentes (ver comentario arriba de
   // CODIGO_A_CATEGORIA) — de ahí la negación.
-  const codigosVigentes = new Set((lscIdTipRegVig ?? "").split(" ").filter(Boolean));
+  const codigosNoVigentes = new Set((lscIdTipRegVig ?? "").split(" ").filter(Boolean));
   return lscIdTipReg
     .split(" ")
     .filter(Boolean)
     .map((codigo) => ({ codigo, tipo: CODIGO_A_CATEGORIA[codigo] }))
     .filter((x): x is { codigo: string; tipo: CategoriaRnp } => Boolean(x.tipo))
-    .map(({ codigo, tipo }) => ({ tipo, vigente: !codigosVigentes.has(codigo) }));
+    .map(({ codigo, tipo }) => ({ tipo, vigente: !codigosNoVigentes.has(codigo) }));
 }
 
 const LIMITE = 20;

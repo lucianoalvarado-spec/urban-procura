@@ -41,7 +41,7 @@ export function RnpCard() {
       rnp: {
         ...proveedor.rnp,
         numeroPartida,
-        capacidadMaximaGeneral,
+        capacidadMaximaGeneral: capacidadMaximaGeneral > 0 ? capacidadMaximaGeneral : null,
         vigente,
         especialidades: especialidadesTexto
           .split(",")
@@ -101,7 +101,7 @@ export function RnpCard() {
     <Card>
       <CardHeader
         title="RNP y capacidad de contratación"
-        subtitle={proveedor.rnp.vigente ? "Vigente" : "No vigente"}
+        subtitle={proveedor.rnp.vigente ? "Habilitado" : "No habilitado"}
         action={
           <button
             type="button"
@@ -175,6 +175,12 @@ export function RnpCard() {
           </div>
         )}
 
+        {registros && registros.length === 0 && (
+          <p className="text-sm text-slate-400">
+            El RNP no reporta ningún tipo de registro para tu RUC.
+          </p>
+        )}
+
         {/* Fallback: nunca ocultar datos manualmente ingresados si su registro
             correspondiente no está presente (ej. registro manual sin RNP, o RNP
             consultado pero sin ese tipo específico). */}
@@ -183,17 +189,21 @@ export function RnpCard() {
             Capacidad máxima de contratación: {formatMonto(proveedor.rnp.capacidadMaximaGeneral)}
           </p>
         )}
-        {!tieneConsultorObras && proveedor.rnp.especialidades.length > 0 && (
-          <div className="flex flex-wrap gap-1.5">
-            {proveedor.rnp.especialidades.map((esp) => (
-              <span
-                key={esp}
-                className="rounded-full bg-[var(--surface-muted)] px-2.5 py-0.5 text-xs text-slate-600"
-              >
-                {esp}
-              </span>
-            ))}
-          </div>
+        {!tieneConsultorObras && (
+          proveedor.rnp.especialidades.length > 0 ? (
+            <div className="flex flex-wrap gap-1.5">
+              {proveedor.rnp.especialidades.map((esp) => (
+                <span
+                  key={esp}
+                  className="rounded-full bg-[var(--surface-muted)] px-2.5 py-0.5 text-xs text-slate-600"
+                >
+                  {esp}
+                </span>
+              ))}
+            </div>
+          ) : (
+            <p className="text-xs text-slate-400">Aún no registraste especialidades RNP.</p>
+          )
         )}
       </CardBody>
     </Card>
