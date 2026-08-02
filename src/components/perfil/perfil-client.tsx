@@ -8,6 +8,7 @@ import { Card, CardBody, CardHeader } from "@/components/ui/card";
 import { PlanBadge } from "@/components/ui/badge";
 import { DatosGeneralesCard } from "@/components/perfil/datos-generales-card";
 import { RnpCard } from "@/components/perfil/rnp-card";
+import { CapacidadDeclaradaCard } from "@/components/perfil/capacidad-declarada-card";
 import { ExperienciaCard } from "@/components/perfil/experiencia-card";
 import { PersonalClaveCard } from "@/components/perfil/personal-clave-card";
 import { EquipamientoCard } from "@/components/perfil/equipamiento-card";
@@ -50,6 +51,7 @@ export function PerfilClient() {
 
       <DatosGeneralesCard />
       <RnpCard />
+      <CapacidadDeclaradaCard />
       <ExperienciaCard />
       <PersonalClaveCard />
       <EquipamientoCard />
