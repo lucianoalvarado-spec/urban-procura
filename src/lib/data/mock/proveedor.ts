@@ -23,6 +23,12 @@ export const proveedorMock: Proveedor = {
       consultoriaObras: { habilitado: true, capacidadMaxima: 3_500_000, capacidadLibre: 2_200_000 },
       ejecucionObras: { habilitado: true, capacidadMaxima: 18_000_000, capacidadLibre: 9_500_000 },
     },
+    capacidadMaximaGeneral: 18_000_000,
+    registros: [
+      { tipo: "servicios", vigente: true },
+      { tipo: "consultoriaObras", vigente: true },
+      { tipo: "ejecucionObras", vigente: true },
+    ],
   },
   experiencia: [
     {
